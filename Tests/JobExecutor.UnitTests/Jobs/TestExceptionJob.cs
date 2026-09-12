@@ -1,0 +1,13 @@
+using JobExecutor.Abstractions.Interfaces;
+
+namespace JobExecutor.UnitTests.Jobs;
+
+public sealed class TestExceptionJob : IJob<TestExceptionJobInput, TestForEachJobResult>
+{
+    public Task<bool> DoAsync(TestExceptionJobInput input, CancellationToken token)
+        => throw new Exception("Test exception.");
+
+    public TestForEachJobResult GetCurrentState(string jobId) => new(jobId, 0);
+}
+
+public sealed record TestExceptionJobInput(int Count);

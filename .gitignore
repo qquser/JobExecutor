@@ -1,0 +1,57 @@
+# ===== Build results (.NET) =====
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Pp]ublish/
+[Pp]ackages/
+artifacts/
+*.user
+*.userosscache
+*.sln.docstates
+
+# ===== NuGet =====
+*.nupkg
+*.snupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+packages/
+
+# ===== Test results =====
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+.coverage/
+.coveragexml
+
+# ===== IDE: Visual Studio =====
+.vs/
+*.suo
+*.userprefs
+*.dbmdl
+*.jfm
+
+# ===== IDE: JetBrains Rider / IntelliJ =====
+.idea/
+*.sln.DotSettings
+*.sln.DotSettings.user
+*.DotSettings
+*.DotSettings.user
+*.csproj.DotSettings
+*.csproj.DotSettings.user
+
+# ===== IDE: VS Code =====
+.vscode/
+*.code-workspace
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===== Claude Code (local-only) =====
+.claude/settings.local.json
