@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
@@ -21,14 +20,12 @@ internal sealed class JobRegistry<TIn, TOut> : IJobRegistry<TIn, TOut>
 
     public bool TryRemove(string jobId, out JobEntry<TIn, TOut> entry) => _entries.TryRemove(jobId, out entry!);
 
-    public void AttachJob(string jobId, IJob<TIn, TOut> job) => _entries[jobId].Job = job;
-
     public int Count => _entries.Count;
 
     public IReadOnlyCollection<KeyValuePair<string, JobEntry<TIn, TOut>>> GetAll() => _entries.ToArray();
 
     public IReadOnlyCollection<KeyValuePair<string, JobEntry<TIn, TOut>>> GetPage(int skip, int take)
-        => _entries.OrderBy(kv => kv.Value.CreatedAt)
+        => _entries.OrderBy(kv => kv.Value.Signals.CreatedAt)
             .ThenBy(kv => kv.Key, StringComparer.Ordinal)
             .Skip(skip)
             .Take(take)

@@ -5,7 +5,7 @@ using JobExecutor.BackgroundService.Models;
 namespace JobExecutor.BackgroundService.Processing;
 
 internal sealed class JobEngine<TIn, TOut>(
-    Channel<JobEntry<TIn, TOut>> channel,
+    Channel<JobRequest<TIn>> channel,
     IJobCommandProcessor<TIn, TOut> commandProcessor)
     : Microsoft.Extensions.Hosting.BackgroundService
     where TIn : class
@@ -15,9 +15,9 @@ internal sealed class JobEngine<TIn, TOut>(
     {
         try
         {
-            await foreach (var entry in channel.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var request in channel.Reader.ReadAllAsync(stoppingToken))
             {
-                _ = commandProcessor.ProcessAsync(entry, stoppingToken);
+                _ = commandProcessor.ProcessAsync(request, stoppingToken);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

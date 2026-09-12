@@ -6,5 +6,5 @@ internal interface IJobCommandProcessor<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    Task ProcessAsync(JobEntry<TIn, TOut> entry, CancellationToken stoppingToken);
+    Task ProcessAsync(JobRequest<TIn> request, CancellationToken stoppingToken);
 }

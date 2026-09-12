@@ -1,4 +1,3 @@
-using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService.Interfaces;
@@ -12,8 +11,6 @@ internal interface IJobRegistry<TIn, TOut>
     bool TryGet(string jobId, out JobEntry<TIn, TOut> entry);
 
     bool TryRemove(string jobId, out JobEntry<TIn, TOut> entry);
-
-    void AttachJob(string jobId, IJob<TIn, TOut> job);
 
     int Count { get; }
 

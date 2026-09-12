@@ -17,7 +17,7 @@ public static class ServicesConfiguration
         where TJob : class, IJob<TIn, TOut>
     {
         services.AddScoped(typeof(IJob<TIn, TOut>), typeof(TJob));
-        services.AddSingleton(_ => Channel.CreateUnbounded<JobEntry<TIn, TOut>>());
+        services.AddSingleton(_ => Channel.CreateUnbounded<JobRequest<TIn>>());
         services.AddSingleton<IJobRegistry<TIn, TOut>, JobRegistry<TIn, TOut>>();
         services.AddSingleton<IJobEntryFactory<TIn, TOut>, JobEntryFactory<TIn, TOut>>();
         services.AddSingleton<IJobRunner<TIn, TOut>, JobRunner<TIn, TOut>>();

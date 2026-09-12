@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace JobExecutor.BackgroundService;
 
 internal sealed class BackgroundJobContext<TIn, TOut>(
-    Channel<JobEntry<TIn, TOut>> channel,
+    Channel<JobRequest<TIn>> channel,
     IJobEntryFactory<TIn, TOut> entryFactory,
     IJobRegistry<TIn, TOut> registry,
     IJobStateMapper<TIn, TOut> stateMapper,
@@ -22,34 +22,34 @@ internal sealed class BackgroundJobContext<TIn, TOut>(
     public async Task<JobCreatedCommandResult> CreateJobAsync(string jobId, TIn input,
         int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null)
     {
-        var entry = entryFactory.Create(jobId, input, maxNrOfRetries, minBackoff, isCreateCommand: true);
-        await channel.Writer.WriteAsync(entry);
+        var request = entryFactory.CreateRequest(jobId, input, maxNrOfRetries, minBackoff, isCreateCommand: true);
+        await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await entry.Created.Task.WaitAsync(timeout ?? _defaultTimeout);
+            return await request.Signals.Created.Task.WaitAsync(timeout ?? _defaultTimeout);
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not complete within the timeout.", entry.Run.JobId);
-            return new JobCreatedCommandResult(false, "Timeout.", entry.Run.JobId);
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.Run.JobId);
+            return new JobCreatedCommandResult(false, "Timeout.", request.Run.JobId);
         }
     }
 
     public async Task<JobDoneCommandResult> DoJobAsync(string jobId, TIn input,
         int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null)
     {
-        var entry = entryFactory.Create(jobId, input, maxNrOfRetries, minBackoff, isCreateCommand: false);
-        await channel.Writer.WriteAsync(entry);
+        var request = entryFactory.CreateRequest(jobId, input, maxNrOfRetries, minBackoff, isCreateCommand: false);
+        await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await entry.Done.Task.WaitAsync(timeout ?? _defaultTimeout);
+            return await request.Signals.Done.Task.WaitAsync(timeout ?? _defaultTimeout);
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not complete within the timeout.", entry.Run.JobId);
-            return new JobDoneCommandResult(false, "Timeout.", entry.Run.JobId);
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.Run.JobId);
+            return new JobDoneCommandResult(false, "Timeout.", request.Run.JobId);
         }
     }
 
@@ -57,7 +57,7 @@ internal sealed class BackgroundJobContext<TIn, TOut>(
     {
         if (registry.TryGet(jobId, out var entry))
         {
-            entry.Cts.Cancel();
+            entry.Signals.Cts.Cancel();
             return Task.FromResult(new StopJobCommandResult(true, string.Empty));
         }
 
