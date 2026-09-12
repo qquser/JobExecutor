@@ -53,5 +53,8 @@ packages/
 Thumbs.db
 Desktop.ini
 
+# ===== BenchmarkDotNet =====
+BenchmarkDotNet.Artifacts/
+
 # ===== Claude Code (local-only) =====
 .claude/settings.local.json
