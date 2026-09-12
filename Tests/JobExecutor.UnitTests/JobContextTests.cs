@@ -170,4 +170,27 @@ public class JobContextTests
         Assert.Single(results, r => r.Success);
         Assert.Equal(requestCount - 1, results.Count(r => !r.Success && r.Result == $"{jobId} job exists."));
     }
+
+    [Fact]
+    public async Task GetJobsPaginateAsync_ShouldReturnJobsInCreationOrder_WhenPagingByOne()
+    {
+        using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
+        var context = fixture.Provider.GetRequiredService<IJobContext<TestForEachJobInput, TestForEachJobResult>>();
+        var jobIds = new List<string>();
+
+        for (var i = 0; i < 3; i++)
+        {
+            var id = Guid.NewGuid().ToString();
+            jobIds.Add(id);
+            await context.CreateJobAsync(id, new TestForEachJobInput(100));
+            await Task.Delay(20);
+        }
+
+        for (var page = 0; page < jobIds.Count; page++)
+        {
+            var result = await context.GetJobsPaginateAsync(page, 1);
+
+            Assert.Equal(jobIds[page], result.WorkersData.Keys.Single());
+        }
+    }
 }

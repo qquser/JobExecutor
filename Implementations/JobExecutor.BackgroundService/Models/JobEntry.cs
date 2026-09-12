@@ -9,6 +9,7 @@ internal sealed class JobEntry<TIn, TOut>
 {
     public required JobRunModel<TIn> Run { get; init; }
     public required bool IsCreateCommand { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
     public required CancellationTokenSource Cts { get; init; }
     public required TaskCompletionSource<JobCreatedCommandResult> Created { get; init; }
     public required TaskCompletionSource<JobDoneCommandResult> Done { get; init; }

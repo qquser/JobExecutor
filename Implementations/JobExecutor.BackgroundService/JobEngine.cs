@@ -4,26 +4,20 @@ using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService;
 
-internal sealed class JobEngine<TIn, TOut> : Microsoft.Extensions.Hosting.BackgroundService
+internal sealed class JobEngine<TIn, TOut>(
+    Channel<JobEntry<TIn, TOut>> channel,
+    IJobCommandProcessor<TIn, TOut> commandProcessor)
+    : Microsoft.Extensions.Hosting.BackgroundService
     where TIn : class
     where TOut : class
 {
-    private readonly Channel<JobEntry<TIn, TOut>> _channel;
-    private readonly IJobCommandProcessor<TIn, TOut> _commandProcessor;
-
-    public JobEngine(Channel<JobEntry<TIn, TOut>> channel, IJobCommandProcessor<TIn, TOut> commandProcessor)
-    {
-        _channel = channel;
-        _commandProcessor = commandProcessor;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
-            await foreach (var entry in _channel.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var entry in channel.Reader.ReadAllAsync(stoppingToken))
             {
-                _ = _commandProcessor.ProcessAsync(entry, stoppingToken);
+                _ = commandProcessor.ProcessAsync(entry, stoppingToken);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

@@ -8,7 +8,8 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    public RespondWorkersInfo<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset, int totalCount, long requestId)
+    public RespondWorkersInfo<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset, 
+        int totalCount, long requestId)
     {
         var data = subset.ToDictionary(
             kv => kv.Key,

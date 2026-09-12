@@ -28,7 +28,11 @@ internal sealed class JobRegistry<TIn, TOut> : IJobRegistry<TIn, TOut>
     public IReadOnlyCollection<KeyValuePair<string, JobEntry<TIn, TOut>>> GetAll() => _entries.ToArray();
 
     public IReadOnlyCollection<KeyValuePair<string, JobEntry<TIn, TOut>>> GetPage(int skip, int take)
-        => _entries.Skip(skip).Take(take).ToArray();
+        => _entries.OrderBy(kv => kv.Value.CreatedAt)
+            .ThenBy(kv => kv.Key, StringComparer.Ordinal)
+            .Skip(skip)
+            .Take(take)
+            .ToArray();
 
     public IReadOnlyCollection<KeyValuePair<string, JobEntry<TIn, TOut>>> GetByIds(ICollection<string> jobIds)
     {

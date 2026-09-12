@@ -9,7 +9,8 @@ internal sealed class JobRunner<TIn, TOut> : IJobRunner<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    public async Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run, CancellationToken token)
+    public async Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run, 
+        CancellationToken token)
     {
         for (var attempt = 0; ; attempt++)
         {

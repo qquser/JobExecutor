@@ -11,7 +11,9 @@ internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
     private readonly int _defaultMaxNrOfRetries = 5;
     private readonly TimeSpan _defaultBackoff = TimeSpan.FromSeconds(1);
 
-    public JobEntry<TIn, TOut> Create(string jobId, TIn input, int? maxNrOfRetries, TimeSpan? minBackoff, bool isCreateCommand)
+    public JobEntry<TIn, TOut> Create(string jobId, 
+        TIn input, int? maxNrOfRetries, 
+        TimeSpan? minBackoff, bool isCreateCommand)
     {
         var id = string.IsNullOrWhiteSpace(jobId) ? Guid.NewGuid().ToString() : jobId;
 
@@ -25,6 +27,7 @@ internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
                 Backoff = minBackoff ?? _defaultBackoff,
             },
             IsCreateCommand = isCreateCommand,
+            CreatedAt = DateTimeOffset.UtcNow,
             Cts = new CancellationTokenSource(),
             Created = new TaskCompletionSource<JobCreatedCommandResult>(TaskCreationOptions.RunContinuationsAsynchronously),
             Done = new TaskCompletionSource<JobDoneCommandResult>(TaskCreationOptions.RunContinuationsAsynchronously),
