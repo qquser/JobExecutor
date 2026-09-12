@@ -4,7 +4,7 @@ using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace JobExecutor.BackgroundService;
+namespace JobExecutor.BackgroundService.Processing;
 
 internal sealed class JobCommandProcessor<TIn, TOut>(
     IServiceScopeFactory scopeFactory,

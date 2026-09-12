@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
-namespace JobExecutor.BackgroundService;
+namespace JobExecutor.BackgroundService.Processing;
 
 internal sealed class JobEngine<TIn, TOut>(
     Channel<JobEntry<TIn, TOut>> channel,

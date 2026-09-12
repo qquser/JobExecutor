@@ -3,6 +3,7 @@ using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
+using Microsoft.Extensions.Logging;
 
 namespace JobExecutor.BackgroundService;
 
@@ -10,7 +11,8 @@ internal sealed class BackgroundJobContext<TIn, TOut>(
     Channel<JobEntry<TIn, TOut>> channel,
     IJobEntryFactory<TIn, TOut> entryFactory,
     IJobRegistry<TIn, TOut> registry,
-    IJobStateMapper<TIn, TOut> stateMapper)
+    IJobStateMapper<TIn, TOut> stateMapper,
+    ILogger<BackgroundJobContext<TIn, TOut>> logger)
     : IJobContext<TIn, TOut>
     where TIn : class
     where TOut : class
@@ -29,6 +31,7 @@ internal sealed class BackgroundJobContext<TIn, TOut>(
         }
         catch (TimeoutException)
         {
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", entry.Run.JobId);
             return new JobCreatedCommandResult(false, "Timeout.", entry.Run.JobId);
         }
     }
@@ -45,6 +48,7 @@ internal sealed class BackgroundJobContext<TIn, TOut>(
         }
         catch (TimeoutException)
         {
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", entry.Run.JobId);
             return new JobDoneCommandResult(false, "Timeout.", entry.Run.JobId);
         }
     }

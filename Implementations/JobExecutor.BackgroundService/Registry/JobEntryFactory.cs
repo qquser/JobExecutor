@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
-namespace JobExecutor.BackgroundService;
+namespace JobExecutor.BackgroundService.Registry;
 
 internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
     where TIn : class

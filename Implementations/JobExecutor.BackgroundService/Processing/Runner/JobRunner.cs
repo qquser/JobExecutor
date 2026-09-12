@@ -2,14 +2,16 @@ using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
+using Microsoft.Extensions.Logging;
 
-namespace JobExecutor.BackgroundService;
+namespace JobExecutor.BackgroundService.Processing.Runner;
 
-internal sealed class JobRunner<TIn, TOut> : IJobRunner<TIn, TOut>
+internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
+    : IJobRunner<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    public async Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run, 
+    public async Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run,
         CancellationToken token)
     {
         for (var attempt = 0; ; attempt++)
@@ -28,8 +30,12 @@ internal sealed class JobRunner<TIn, TOut> : IJobRunner<TIn, TOut>
             catch (Exception ex)
             {
                 if (attempt >= run.MaxNrOfRetries)
+                {
+                    logger.LogError(ex, "Job {JobId} failed after {Attempts} attempts, retries exhausted.", run.JobId, attempt + 1);
                     return new JobDoneCommandResult(false, ex.Message, run.JobId);
+                }
 
+                logger.LogWarning(ex, "Job {JobId} attempt {Attempt} failed, retrying.", run.JobId, attempt + 1);
                 await Task.Delay(run.Backoff, token);
             }
         }

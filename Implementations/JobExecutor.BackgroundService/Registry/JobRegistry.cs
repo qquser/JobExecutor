@@ -3,7 +3,7 @@ using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
-namespace JobExecutor.BackgroundService;
+namespace JobExecutor.BackgroundService.Registry;
 
 internal sealed class JobRegistry<TIn, TOut> : IJobRegistry<TIn, TOut>
     where TIn : class

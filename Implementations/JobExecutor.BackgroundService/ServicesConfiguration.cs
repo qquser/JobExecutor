@@ -2,6 +2,9 @@ using System.Threading.Channels;
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
+using JobExecutor.BackgroundService.Processing;
+using JobExecutor.BackgroundService.Processing.Runner;
+using JobExecutor.BackgroundService.Registry;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JobExecutor.BackgroundService;

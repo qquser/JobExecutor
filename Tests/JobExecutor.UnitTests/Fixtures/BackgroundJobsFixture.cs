@@ -2,6 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.BackgroundService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace JobExecutor.UnitTests.Fixtures;
 
@@ -15,6 +16,7 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
     public BackgroundJobsFixture()
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddBackgroundJobs<TIn, TOut, TJob>();
         Provider = services.BuildServiceProvider();
 
