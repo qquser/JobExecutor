@@ -1,5 +1,7 @@
 using System.Threading.Channels;
 using JobExecutor.Abstractions.Interfaces;
+using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using JobExecutor.BackgroundService.Processing;
@@ -11,7 +13,10 @@ namespace JobExecutor.BackgroundService;
 
 public static class ServicesConfiguration
 {
-    public static IServiceCollection AddBackgroundJobs<TIn, TOut, TJob>(this IServiceCollection services)
+    public static IServiceCollection AddBackgroundJobs<TIn, TOut, TJob>(
+        this IServiceCollection services,
+        Action<JobRetryOptions>? configureRetry = null,
+        Action<JobTimeoutOptions>? configureTimeout = null)
         where TIn : class
         where TOut : class
         where TJob : class, IJob<TIn, TOut>
@@ -40,6 +45,14 @@ public static class ServicesConfiguration
                 $"A background job with output type {typeof(TOut).Name} is already registered. " +
                 "Each background job must use its own output model type.");
         }
+
+        services.AddOptions();
+
+        if (configureRetry is not null)
+            services.Configure<JobRetryOptions>(configureRetry);
+
+        if (configureTimeout is not null)
+            services.Configure<JobTimeoutOptions>(configureTimeout);
 
         services.AddScoped(typeof(IJob<TIn, TOut>), typeof(TJob));
         services.AddSingleton(_ => Channel.CreateUnbounded<JobRequest<TIn>>());

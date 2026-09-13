@@ -1,10 +1,12 @@
 using System.Threading.Channels;
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace JobExecutor.BackgroundService;
 
@@ -13,24 +15,23 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
                         IJobEntryFactory<TIn, TOut> entryFactory,
                         IJobRegistry<TIn, TOut> registry,
                         IJobStateMapper<TIn, TOut> stateMapper,
-                        ILogger<BackgroundJobManager<TIn, TOut>> logger)
+                        ILogger<BackgroundJobManager<TIn, TOut>> logger,
+                        IOptions<JobTimeoutOptions> timeoutOptions)
 
     : IJobManager<TIn, TOut>
 
         where TIn : class
         where TOut : class
 {
-    private readonly TimeSpan _defaultTimeout = TimeSpan.FromSeconds(120);
-
     public async Task<JobStartedResult> StartJobAsync(string jobId, TIn input,
-        int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null)
+        JobRetryOptions? retry = null, TimeSpan? timeout = null)
     {
-        var request = entryFactory.CreateRequest(jobId, input, maxNrOfRetries, minBackoff, isStartCommand: true);
+        var request = entryFactory.CreateRequest(jobId, input, retry, isStartCommand: true);
         await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Started.Task.WaitAsync(timeout ?? _defaultTimeout);
+            return await request.Signals.Started.Task.WaitAsync(timeout ?? timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {
@@ -40,14 +41,14 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
     }
 
     public async Task<JobCompletedResult> RunJobAsync(string jobId, TIn input,
-        int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null)
+        JobRetryOptions? retry = null, TimeSpan? timeout = null)
     {
-        var request = entryFactory.CreateRequest(jobId, input, maxNrOfRetries, minBackoff, isStartCommand: false);
+        var request = entryFactory.CreateRequest(jobId, input, retry, isStartCommand: false);
         await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Completed.Task.WaitAsync(timeout ?? _defaultTimeout);
+            return await request.Signals.Completed.Task.WaitAsync(timeout ?? timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {

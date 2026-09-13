@@ -1,21 +1,21 @@
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
+using Microsoft.Extensions.Options;
 
 namespace JobExecutor.BackgroundService.Registry;
 
-internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
+internal sealed class JobEntryFactory<TIn, TOut>(IOptions<JobRetryOptions> retryOptions)
+    : IJobEntryFactory<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    private readonly int _defaultMaxNrOfRetries = 5;
-    private readonly TimeSpan _defaultBackoff = TimeSpan.FromSeconds(1);
-
-    public JobRequest<TIn> CreateRequest(string jobId, TIn input, int? maxNrOfRetries,
-        TimeSpan? minBackoff, bool isStartCommand)
+    public JobRequest<TIn> CreateRequest(string jobId, TIn input, JobRetryOptions? retry, bool isStartCommand)
     {
         var id = string.IsNullOrWhiteSpace(jobId) ? Guid.NewGuid().ToString() : jobId;
+        var effective = retry ?? retryOptions.Value;
 
         return new JobRequest<TIn>
         {
@@ -23,8 +23,8 @@ internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
             {
                 JobId = id,
                 Input = input,
-                MaxNrOfRetries = maxNrOfRetries ?? _defaultMaxNrOfRetries,
-                Backoff = minBackoff ?? _defaultBackoff,
+                MaxNrOfRetries = effective.MaxNrOfRetries,
+                Backoff = effective.MinBackoff,
             },
             Signals = new JobSignals
             {

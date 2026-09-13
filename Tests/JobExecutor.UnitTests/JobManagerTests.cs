@@ -1,4 +1,6 @@
 using JobExecutor.Abstractions.Interfaces;
+using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.UnitTests.Fixtures;
 using JobExecutor.UnitTests.Jobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,7 +48,7 @@ public class JobManagerTests
         var jobId = Guid.NewGuid().ToString();
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionJobInput(1),
-            maxNrOfRetries: 2, minBackoff: TimeSpan.FromMilliseconds(1));
+            new JobRetryOptions { MaxNrOfRetries = 2, MinBackoff = TimeSpan.FromMilliseconds(1) });
 
         Assert.False(result.Success);
     }
@@ -59,7 +61,7 @@ public class JobManagerTests
         var jobId = Guid.NewGuid().ToString();
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1),
-            maxNrOfRetries: 2, minBackoff: TimeSpan.FromMilliseconds(1));
+            new JobRetryOptions { MaxNrOfRetries = 2, MinBackoff = TimeSpan.FromMilliseconds(1) });
 
         Assert.True(result.Success);
     }
