@@ -1,4 +1,3 @@
-using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Models;
 

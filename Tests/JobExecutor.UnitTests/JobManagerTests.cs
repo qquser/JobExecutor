@@ -54,8 +54,8 @@ public class JobManagerTests
     [Fact]
     public async Task RunJobAsync_ShouldReturnSuccess_WhenFirstAttemptFailsButRetrySucceeds()
     {
-        using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestForEachJobResult, TestExceptionOnFirstTryJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionOnFirstTryJobInput, TestForEachJobResult>>();
+        using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>();
+        var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>();
         var jobId = Guid.NewGuid().ToString();
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1),

@@ -16,6 +16,31 @@ public static class ServicesConfiguration
         where TOut : class
         where TJob : class, IJob<TIn, TOut>
     {
+        if (services.Any(descriptor => descriptor.ImplementationType == typeof(TJob)))
+        {
+            throw new InvalidOperationException(
+                $"Background job {typeof(TJob).Name} is already registered. " +
+                "Each background job class must be registered only once.");
+        }
+
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(Channel<JobRequest<TIn>>)))
+        {
+            throw new InvalidOperationException(
+                $"A background job with input type {typeof(TIn).Name} is already registered. " +
+                "Each background job must use its own input model type.");
+        }
+
+        if (services.Any(descriptor =>
+                descriptor.ServiceType is { } type &&
+                type.IsGenericType &&
+                type.GetGenericTypeDefinition() == typeof(IJob<,>) &&
+                type.GetGenericArguments()[1] == typeof(TOut)))
+        {
+            throw new InvalidOperationException(
+                $"A background job with output type {typeof(TOut).Name} is already registered. " +
+                "Each background job must use its own output model type.");
+        }
+
         services.AddScoped(typeof(IJob<TIn, TOut>), typeof(TJob));
         services.AddSingleton(_ => Channel.CreateUnbounded<JobRequest<TIn>>());
         services.AddSingleton<IJobRegistry<TIn, TOut>, JobRegistry<TIn, TOut>>();

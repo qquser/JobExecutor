@@ -5,7 +5,6 @@ using JobExecutor.BackgroundService;
 using JobExecutor.Benchmarks.Jobs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace JobExecutor.Benchmarks.Benchmarks;
 

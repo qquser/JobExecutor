@@ -10,6 +10,7 @@ A .NET library for running background jobs in-process: submit a job, track its s
 - **Cancellation**: `StopJobAsync` cancels a running job via its `CancellationToken`.
 - **Query & pagination**: list all / page by start time / fetch by ids.
 - **Result pattern**: no exceptions for control flow — every command returns a `*Result` record.
+- **Zero dependencies**: built on the .NET base class library only (async/await, `Task`, `CancellationToken`) — no third-party libraries, no external services, no frameworks. It just runs in-process.
 
 ## Quick start
 
@@ -62,7 +63,7 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 |---|---|
 | `IJob<TIn, TOut>` | A job: `DoAsync(input, token)` + `GetCurrentState(jobId)`. Registered **scoped**. |
 | `IJobManager<TIn, TOut>` | Entry point to start, run, stop, and query jobs. |
-| `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). |
+| `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). Each job must use its **own input and output model types** (`TIn`, `TOut`) — reusing either model for another job fails fast. |
 | Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `JobsQueryResult<TOut>`, `JobStateInfo<TOut>`. |
 
 ## Projects

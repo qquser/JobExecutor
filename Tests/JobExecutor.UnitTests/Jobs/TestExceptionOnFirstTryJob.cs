@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.UnitTests.Jobs;
 
-public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJobInput, TestForEachJobResult>
+public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>
 {
     private int _attempts;
 
@@ -22,7 +22,9 @@ public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJob
         return true;
     }
 
-    public TestForEachJobResult GetCurrentState(string jobId) => new(jobId, 0);
+    public TestExceptionOnFirstTryJobResult GetCurrentState(string jobId) => new(jobId, 0);
 }
 
 public sealed record TestExceptionOnFirstTryJobInput(int Count);
+
+public sealed record TestExceptionOnFirstTryJobResult(string Id, int Data);

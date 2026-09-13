@@ -9,14 +9,16 @@ using Microsoft.Extensions.Logging;
 namespace JobExecutor.BackgroundService;
 
 internal sealed class BackgroundJobManager<TIn, TOut>(
-    Channel<JobRequest<TIn>> channel,
-    IJobEntryFactory<TIn, TOut> entryFactory,
-    IJobRegistry<TIn, TOut> registry,
-    IJobStateMapper<TIn, TOut> stateMapper,
-    ILogger<BackgroundJobManager<TIn, TOut>> logger)
+                        Channel<JobRequest<TIn>> channel,
+                        IJobEntryFactory<TIn, TOut> entryFactory,
+                        IJobRegistry<TIn, TOut> registry,
+                        IJobStateMapper<TIn, TOut> stateMapper,
+                        ILogger<BackgroundJobManager<TIn, TOut>> logger)
+
     : IJobManager<TIn, TOut>
-    where TIn : class
-    where TOut : class
+
+        where TIn : class
+        where TOut : class
 {
     private readonly TimeSpan _defaultTimeout = TimeSpan.FromSeconds(120);
 
