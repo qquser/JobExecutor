@@ -10,7 +10,7 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     where TOut : class
 {
     public JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset,
-        int totalCount, long requestId)
+        int totalCount)
     {
         var data = subset.ToDictionary(
             kv => kv.Key,
@@ -23,7 +23,6 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
 
         return new JobsQueryResult<TOut>
         {
-            RequestId = requestId,
             Jobs = data,
             TotalCount = totalCount,
         };

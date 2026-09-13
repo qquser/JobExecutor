@@ -54,7 +54,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
     }
 
-    public Task<JobStoppedResult> StopJobAsync(string jobId, TimeSpan? timeout = null)
+    public Task<JobStoppedResult> StopJobAsync(string jobId)
     {
         if (registry.TryGet(jobId, out var entry))
         {
@@ -65,12 +65,12 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         return Task.FromResult(new JobStoppedResult(false, $"Job list does not contain {jobId}"));
     }
 
-    public Task<JobsQueryResult<TOut>> GetAllJobsAsync(TimeSpan? timeout = null, long requestId = 0)
-        => Task.FromResult(stateMapper.Map(registry.GetAll(), registry.Count, requestId));
+    public Task<JobsQueryResult<TOut>> GetAllJobsAsync()
+        => Task.FromResult(stateMapper.Map(registry.GetAll(), registry.Count));
 
-    public Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take, TimeSpan? timeout = null, long requestId = 0)
-        => Task.FromResult(stateMapper.Map(registry.GetPage(skip, take), registry.Count, requestId));
+    public Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take)
+        => Task.FromResult(stateMapper.Map(registry.GetPage(skip, take), registry.Count));
 
-    public Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds, TimeSpan? timeout = null, long requestId = 0)
-        => Task.FromResult(stateMapper.Map(registry.GetByIds(jobIds), registry.Count, requestId));
+    public Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds)
+        => Task.FromResult(stateMapper.Map(registry.GetByIds(jobIds), registry.Count));
 }

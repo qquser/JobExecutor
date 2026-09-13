@@ -7,5 +7,5 @@ public sealed record JobStateInfo<TOut>
 
     public required string ErrorMessage { get; init; }
 
-    public TOut? Result { get; init; }
+    public required TOut? Result { get; init; }
 }

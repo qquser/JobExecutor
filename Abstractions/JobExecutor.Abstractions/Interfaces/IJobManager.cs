@@ -59,34 +59,27 @@ public interface IJobManager<in TIn, TOut>
     /// Stops a background job.
     /// </summary>
     /// <param name="jobId">Identifier of the job to stop. It is normalized, so it can be passed as-is or already normalized.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the stop-job request.</param>
     /// <returns>The result of the stop attempt.</returns>
-    Task<JobStoppedResult> StopJobAsync(string jobId, TimeSpan? timeout = null);
+    Task<JobStoppedResult> StopJobAsync(string jobId);
 
     /// <summary>
     /// Gets the state of all running background jobs.
     /// </summary>
-    /// <param name="requestId">Request identifier.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<JobsQueryResult<TOut>> GetAllJobsAsync(TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetAllJobsAsync();
 
     /// <summary>
     /// Gets the state of running background jobs page by page.
     /// </summary>
-    /// <param name="requestId">Request identifier.</param>
     /// <param name="skip">The number of jobs to skip.</param>
     /// <param name="take">The number of jobs to return.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take, TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take);
 
     /// <summary>
     /// Gets the state of running background jobs by a list of identifiers.
     /// </summary>
-    /// <param name="requestId">Request identifier.</param>
     /// <param name="jobIds">The list of job identifiers.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds, TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds);
 }
