@@ -6,7 +6,7 @@ public sealed class TestSameInputDifferentOutputJob : IJob<TestForEachJobInput, 
 {
     public Task<bool> DoAsync(TestForEachJobInput input, CancellationToken token) => Task.FromResult(true);
 
-    public TestOtherJobResult GetCurrentState(string jobId) => new(jobId, 0);
+    public TestOtherJobResult GetCurrentState() => new(0);
 }
 
-public sealed record TestOtherJobResult(string Id, int Data);
+public sealed record TestOtherJobResult(int Data);

@@ -20,9 +20,9 @@ public sealed class TestForEachJob : IJob<TestForEachJobInput, TestForEachJobRes
         return true;
     }
 
-    public TestForEachJobResult GetCurrentState(string jobId) => new(jobId, _currentState);
+    public TestForEachJobResult GetCurrentState() => new(_currentState);
 }
 
 public sealed record TestForEachJobInput(int Count);
 
-public sealed record TestForEachJobResult(string Id, int Data);
+public sealed record TestForEachJobResult(int Data);

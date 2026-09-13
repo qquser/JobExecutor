@@ -7,7 +7,7 @@ public sealed class TestExceptionJob : IJob<TestExceptionJobInput, TestForEachJo
     public Task<bool> DoAsync(TestExceptionJobInput input, CancellationToken token)
         => throw new Exception("Test exception.");
 
-    public TestForEachJobResult GetCurrentState(string jobId) => new(jobId, 0);
+    public TestForEachJobResult GetCurrentState() => new(0);
 }
 
 public sealed record TestExceptionJobInput(int Count);

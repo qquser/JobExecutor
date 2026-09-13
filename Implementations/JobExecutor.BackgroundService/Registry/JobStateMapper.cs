@@ -17,7 +17,7 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
             {
                 Success = true,
                 ErrorMessage = string.Empty,
-                Result = kv.Value.Job.GetCurrentState(kv.Key),
+                Result = kv.Value.Job.GetCurrentState(),
             });
 
         return new JobsQueryResult<TOut>

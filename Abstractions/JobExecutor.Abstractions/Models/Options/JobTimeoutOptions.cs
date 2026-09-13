@@ -6,5 +6,5 @@ namespace JobExecutor.Abstractions.Models.Options;
 /// </summary>
 public sealed record JobTimeoutOptions
 {
-    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(120);
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(120);
 }

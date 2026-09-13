@@ -1,4 +1,5 @@
 using JobExecutor.Abstractions.Interfaces;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,11 +13,13 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
 {
     private readonly IHostedService[] _hostedServices;
 
-    public BackgroundJobsFixture()
+    public BackgroundJobsFixture(
+        Action<JobRetryOptions>? configureRetry = null,
+        Action<JobTimeoutOptions>? configureTimeout = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddBackgroundJobs<TIn, TOut, TJob>();
+        services.AddBackgroundJobs<TIn, TOut, TJob>(configureRetry, configureTimeout);
         Provider = services.BuildServiceProvider();
 
         _hostedServices = Provider.GetServices<IHostedService>().ToArray();

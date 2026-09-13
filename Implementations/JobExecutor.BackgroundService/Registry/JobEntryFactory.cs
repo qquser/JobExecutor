@@ -12,19 +12,18 @@ internal sealed class JobEntryFactory<TIn, TOut>(IOptions<JobRetryOptions> retry
     where TIn : class
     where TOut : class
 {
-    public JobRequest<TIn> CreateRequest(string jobId, TIn input, JobRetryOptions? retry, bool isStartCommand)
+    public JobRequest<TIn> CreateRequest(string jobId, TIn input, bool isStartCommand)
     {
-        var id = string.IsNullOrWhiteSpace(jobId) ? Guid.NewGuid().ToString() : jobId;
-        var effective = retry ?? retryOptions.Value;
+        var retry = retryOptions.Value;
 
         return new JobRequest<TIn>
         {
             Run = new JobRunModel<TIn>
             {
-                JobId = id,
+                JobId = jobId,
                 Input = input,
-                MaxNrOfRetries = effective.MaxNrOfRetries,
-                Backoff = effective.MinBackoff,
+                MaxNrOfRetries = retry.MaxNrOfRetries,
+                Backoff = retry.MinBackoff,
             },
             Signals = new JobSignals
             {

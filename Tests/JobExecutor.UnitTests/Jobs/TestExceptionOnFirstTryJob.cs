@@ -22,9 +22,9 @@ public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJob
         return true;
     }
 
-    public TestExceptionOnFirstTryJobResult GetCurrentState(string jobId) => new(jobId, 0);
+    public TestExceptionOnFirstTryJobResult GetCurrentState() => new(0);
 }
 
 public sealed record TestExceptionOnFirstTryJobInput(int Count);
 
-public sealed record TestExceptionOnFirstTryJobResult(string Id, int Data);
+public sealed record TestExceptionOnFirstTryJobResult(int Data);

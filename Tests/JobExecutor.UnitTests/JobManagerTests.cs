@@ -1,6 +1,4 @@
 using JobExecutor.Abstractions.Interfaces;
-using JobExecutor.Abstractions.Models;
-using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.UnitTests.Fixtures;
 using JobExecutor.UnitTests.Jobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,12 +41,12 @@ public class JobManagerTests
     [Fact]
     public async Task RunJobAsync_ShouldReturnFailure_WhenJobAlwaysThrows()
     {
-        using var fixture = new BackgroundJobsFixture<TestExceptionJobInput, TestForEachJobResult, TestExceptionJob>();
+        using var fixture = new BackgroundJobsFixture<TestExceptionJobInput, TestForEachJobResult, TestExceptionJob>(
+            configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
         var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionJobInput, TestForEachJobResult>>();
         var jobId = Guid.NewGuid().ToString();
 
-        var result = await manager.RunJobAsync(jobId, new TestExceptionJobInput(1),
-            new JobRetryOptions { MaxNrOfRetries = 2, MinBackoff = TimeSpan.FromMilliseconds(1) });
+        var result = await manager.RunJobAsync(jobId, new TestExceptionJobInput(1));
 
         Assert.False(result.Success);
     }
@@ -56,26 +54,40 @@ public class JobManagerTests
     [Fact]
     public async Task RunJobAsync_ShouldReturnSuccess_WhenFirstAttemptFailsButRetrySucceeds()
     {
-        using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>();
+        using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>(
+            configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
         var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>();
         var jobId = Guid.NewGuid().ToString();
 
-        var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1),
-            new JobRetryOptions { MaxNrOfRetries = 2, MinBackoff = TimeSpan.FromMilliseconds(1) });
+        var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1));
 
         Assert.True(result.Success);
     }
 
-    [Fact]
-    public async Task StartJobAsync_ShouldGenerateId_WhenJobIdIsEmpty()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task StartJobAsync_ShouldReturnFailure_WhenJobIdIsNullOrWhitespace(string jobId)
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
         var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
 
-        var result = await manager.StartJobAsync(string.Empty, new TestForEachJobInput(1));
+        var result = await manager.StartJobAsync(jobId, new TestForEachJobInput(1));
 
-        Assert.True(result.Success);
-        Assert.False(string.IsNullOrWhiteSpace(result.JobId));
+        Assert.False(result.Success);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RunJobAsync_ShouldReturnFailure_WhenJobIdIsNullOrWhitespace(string jobId)
+    {
+        using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
+        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+
+        var result = await manager.RunJobAsync(jobId, new TestForEachJobInput(1));
+
+        Assert.False(result.Success);
     }
 
     [Fact]

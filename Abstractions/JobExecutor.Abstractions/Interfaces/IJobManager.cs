@@ -1,5 +1,4 @@
 using JobExecutor.Abstractions.Models;
-using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.Abstractions.Models.Queries;
 
 namespace JobExecutor.Abstractions.Interfaces;
@@ -15,43 +14,31 @@ public interface IJobManager<in TIn, TOut>
 {
     /// <summary>
     /// Starts a background job without waiting for it to complete. If IJob.DoAsync throws,
-    /// its execution is retried, which does not affect job start.
+    /// its execution is retried, which does not affect job start. The retry policy and timeout
+    /// are configured once at registration via <c>AddBackgroundJobs</c>.
     /// </summary>
     /// <param name="input">Input parameters for running the job. On each retry after an error,
     /// IJob.DoAsync is restarted from the beginning with the same input model that was passed to this method.</param>
-    /// <param name="retry">Retry policy for this job. Null falls back to the default registered via
-    /// <c>AddBackgroundJobs</c>. IJob.DoAsync is invoked at most <see cref="JobRetryOptions.MaxNrOfRetries"/> + 1 times
-    /// when exceptions occur; the next attempt starts after <see cref="JobRetryOptions.MinBackoff"/>.</param>
-    /// <param name="jobId">Job identifier. Defaults to a normalized Guid.NewGuid(). Must be unique.</param>
-    /// <param name="timeout">Overrides the time to wait for the start-job request. Null uses the default
-    /// registered via <c>AddBackgroundJobs</c> (default 120 seconds).
-    /// Expiration of this interval does NOT stop the job itself.</param>
+    /// <param name="jobId">Job identifier. Must be a non-empty string and unique among running jobs.</param>
     /// <returns>The result of starting the background job.</returns>
-    Task<JobStartedResult> StartJobAsync(string jobId, TIn input,
-        JobRetryOptions? retry = null, TimeSpan? timeout = null);
+    Task<JobStartedResult> StartJobAsync(string jobId, TIn input);
 
     /// <summary>
     /// Runs a background job and waits for it to complete. If IJob.DoAsync throws, its execution is retried
-    /// the specified number of times. Retries do not interrupt the wait, but once the retry count is exhausted,
-    /// the result is returned.
+    /// the configured number of times. Retries do not interrupt the wait, but once the retry count is exhausted,
+    /// the result is returned. The retry policy and timeout are configured once at registration via
+    /// <c>AddBackgroundJobs</c>.
     /// </summary>
     /// <param name="input">Input parameters for running the job. On each retry after an error,
     /// IJob.DoAsync is restarted from the beginning with the same input model that was passed to this method.</param>
-    /// <param name="retry">Retry policy for this job. Null falls back to the default registered via
-    /// <c>AddBackgroundJobs</c>. IJob.DoAsync is invoked at most <see cref="JobRetryOptions.MaxNrOfRetries"/> + 1 times
-    /// when exceptions occur; the next attempt starts after <see cref="JobRetryOptions.MinBackoff"/>.</param>
-    /// <param name="jobId">Job identifier. Defaults to a normalized Guid.NewGuid(). Must be unique.</param>
-    /// <param name="timeout">Overrides the time to wait for the run-job request. Null uses the default
-    /// registered via <c>AddBackgroundJobs</c> (default 120 seconds).
-    /// Expiration of this interval does NOT stop the job itself.</param>
+    /// <param name="jobId">Job identifier. Must be a non-empty string and unique among running jobs.</param>
     /// <returns>The result of running the background job.</returns>
-    Task<JobCompletedResult> RunJobAsync(string jobId, TIn input,
-        JobRetryOptions? retry = null, TimeSpan? timeout = null);
+    Task<JobCompletedResult> RunJobAsync(string jobId, TIn input);
 
     /// <summary>
     /// Stops a background job.
     /// </summary>
-    /// <param name="jobId">Identifier of the job to stop. It is normalized, so it can be passed as-is or already normalized.</param>
+    /// <param name="jobId">Identifier of the job to stop.</param>
     /// <returns>The result of the stop attempt.</returns>
     Task<JobStoppedResult> StopJobAsync(string jobId);
 

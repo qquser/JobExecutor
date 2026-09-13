@@ -14,5 +14,5 @@ public interface IJob<in TIn, out TOut>
     /// <summary>
     /// Describes the state of the fields of the IJob class that are changed by the DoAsync method.
     /// </summary>
-    TOut GetCurrentState(string jobId);
+    TOut GetCurrentState();
 }

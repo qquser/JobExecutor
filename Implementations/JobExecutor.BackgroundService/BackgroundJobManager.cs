@@ -23,15 +23,17 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         where TIn : class
         where TOut : class
 {
-    public async Task<JobStartedResult> StartJobAsync(string jobId, TIn input,
-        JobRetryOptions? retry = null, TimeSpan? timeout = null)
+    public async Task<JobStartedResult> StartJobAsync(string jobId, TIn input)
     {
-        var request = entryFactory.CreateRequest(jobId, input, retry, isStartCommand: true);
+        if (string.IsNullOrWhiteSpace(jobId))
+            return new JobStartedResult(false, "Job id is required.", string.Empty);
+
+        var request = entryFactory.CreateRequest(jobId, input, isStartCommand: true);
         await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Started.Task.WaitAsync(timeout ?? timeoutOptions.Value.Timeout);
+            return await request.Signals.Started.Task.WaitAsync(timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {
@@ -40,15 +42,17 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
     }
 
-    public async Task<JobCompletedResult> RunJobAsync(string jobId, TIn input,
-        JobRetryOptions? retry = null, TimeSpan? timeout = null)
+    public async Task<JobCompletedResult> RunJobAsync(string jobId, TIn input)
     {
-        var request = entryFactory.CreateRequest(jobId, input, retry, isStartCommand: false);
+        if (string.IsNullOrWhiteSpace(jobId))
+            return new JobCompletedResult(false, "Job id is required.", string.Empty);
+
+        var request = entryFactory.CreateRequest(jobId, input, isStartCommand: false);
         await channel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Completed.Task.WaitAsync(timeout ?? timeoutOptions.Value.Timeout);
+            return await request.Signals.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {

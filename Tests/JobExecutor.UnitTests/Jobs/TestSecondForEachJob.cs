@@ -6,5 +6,5 @@ public sealed class TestSecondForEachJob : IJob<TestForEachJobInput, TestForEach
 {
     public Task<bool> DoAsync(TestForEachJobInput input, CancellationToken token) => Task.FromResult(true);
 
-    public TestForEachJobResult GetCurrentState(string jobId) => new(jobId, 0);
+    public TestForEachJobResult GetCurrentState() => new(0);
 }
