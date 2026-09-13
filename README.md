@@ -1,14 +1,14 @@
 # JobExecutor
 
-A .NET library for running background jobs in-process: submit a job, track its state, retry on failure, and query running jobs — all behind two abstractions (`IJob` and `IJobContext`).
+A .NET library for running background jobs in-process: submit a job, track its state, retry on failure, and query running jobs — all behind two abstractions (`IJob` and `IJobManager`).
 
 ## Features
 
-- **Fire-and-forget or await**: `CreateJobAsync` returns once the job is registered; `DoJobAsync` waits for completion.
+- **Start-and-forget or await**: `StartJobAsync` returns once the job has started and keeps running in the background (you can still reach it by `JobId`); `RunJobAsync` waits for completion.
 - **Retries with backoff**: first attempt plus `maxNrOfRetries`, backoff spread across `minBackoff`..`maxBackoff`.
 - **Deduplication**: submitting the same `JobId` twice returns `"<id> job exists."` for the duplicates.
 - **Cancellation**: `StopJobAsync` cancels a running job via its `CancellationToken`.
-- **Query & pagination**: list all / paginate by creation time / fetch by ids.
+- **Query & pagination**: list all / page by start time / fetch by ids.
 - **Result pattern**: no exceptions for control flow — every command returns a `*Result` record.
 
 ## Quick start
@@ -48,12 +48,12 @@ var services = new ServiceCollection();
 services.AddBackgroundJobs<EmailJobInput, EmailJobState, EmailJob>();
 var provider = services.BuildServiceProvider();
 
-// 3. Start/stop/query through IJobContext.
-var context = provider.GetRequiredService<IJobContext<EmailJobInput, EmailJobState>>();
+// 3. Start/run/stop/query through IJobManager.
+var manager = provider.GetRequiredService<IJobManager<EmailJobInput, EmailJobState>>();
 
-var created = await context.CreateJobAsync("job-1", new EmailJobInput(new[] { "a@x.io" }));
-var done    = await context.DoJobAsync("job-2", new EmailJobInput(new[] { "b@x.io" }));
-var page    = await context.GetJobsPaginateAsync(skip: 0, take: 10);
+var started = await manager.StartJobAsync("job-1", new EmailJobInput(new[] { "a@x.io" }));
+var done    = await manager.RunJobAsync("job-2", new EmailJobInput(new[] { "b@x.io" }));
+var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 ```
 
 ## Key abstractions
@@ -61,9 +61,9 @@ var page    = await context.GetJobsPaginateAsync(skip: 0, take: 10);
 | Abstraction | Role |
 |---|---|
 | `IJob<TIn, TOut>` | A job: `DoAsync(input, token)` + `GetCurrentState(jobId)`. Registered **scoped**. |
-| `IJobContext<TIn, TOut>` | Entry point to create, run, stop, and query jobs. |
+| `IJobManager<TIn, TOut>` | Entry point to start, run, stop, and query jobs. |
 | `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). |
-| `*Result` records | `JobCreatedCommandResult`, `JobDoneCommandResult`, `StopJobCommandResult`, `RespondWorkersInfo<TOut>`, `ReplyWorkerInfo<TOut>`. |
+| Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `JobsQueryResult<TOut>`, `JobStateInfo<TOut>`. |
 
 ## Projects
 

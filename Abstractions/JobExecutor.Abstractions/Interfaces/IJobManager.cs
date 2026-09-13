@@ -1,19 +1,20 @@
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Queries;
 
 namespace JobExecutor.Abstractions.Interfaces;
 
 /// <summary>
-/// Provides access to starting, stopping, and querying the state of background jobs.
+/// Provides access to starting, running, stopping, and querying the state of background jobs.
 /// </summary>
 /// <typeparam name="TIn">Input parameters for the command that starts the background job.</typeparam>
 /// <typeparam name="TOut">The current state of the background job.</typeparam>
-public interface IJobContext<in TIn, TOut>
+public interface IJobManager<in TIn, TOut>
     where TIn : class
     where TOut : class
 {
     /// <summary>
-    /// Creates a background job without waiting for it to complete. If IJob.DoAsync throws,
-    /// its execution is retried, which does not affect job creation.
+    /// Starts a background job without waiting for it to complete. If IJob.DoAsync throws,
+    /// its execution is retried, which does not affect job start.
     /// </summary>
     /// <param name="input">Input parameters for running the job. On each retry after an error,
     /// IJob.DoAsync is restarted from the beginning with the same input model that was passed to this method.</param>
@@ -26,14 +27,14 @@ public interface IJobContext<in TIn, TOut>
     /// The actual delay is picked in the range from minBackoff to maxBackoff to spread the load evenly
     /// across the systems the job interacts with.</param>
     /// <param name="jobId">Job identifier. Defaults to a normalized Guid.NewGuid(). Must be unique.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the create-job request.
+    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the start-job request.
     /// Expiration of this interval does NOT stop the job itself.</param>
-    /// <returns>The result of creating the background job.</returns>
-    Task<JobCreatedCommandResult> CreateJobAsync(string jobId, TIn input,
+    /// <returns>The result of starting the background job.</returns>
+    Task<JobStartedResult> StartJobAsync(string jobId, TIn input,
         int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null);
 
     /// <summary>
-    /// Creates a background job and waits for it to complete. If IJob.DoAsync throws, its execution is retried
+    /// Runs a background job and waits for it to complete. If IJob.DoAsync throws, its execution is retried
     /// the specified number of times. Retries do not interrupt the wait, but once the retry count is exhausted,
     /// the result is returned.
     /// </summary>
@@ -48,10 +49,10 @@ public interface IJobContext<in TIn, TOut>
     /// The actual delay is picked in the range from minBackoff to maxBackoff to spread the load evenly
     /// across the systems the job interacts with.</param>
     /// <param name="jobId">Job identifier. Defaults to a normalized Guid.NewGuid(). Must be unique.</param>
-    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the create-job request.
+    /// <param name="timeout">Defaults to 120 seconds. The time to wait for the run-job request.
     /// Expiration of this interval does NOT stop the job itself.</param>
     /// <returns>The result of running the background job.</returns>
-    Task<JobDoneCommandResult> DoJobAsync(string jobId, TIn input,
+    Task<JobCompletedResult> RunJobAsync(string jobId, TIn input,
         int? maxNrOfRetries = null, TimeSpan? minBackoff = null, TimeSpan? maxBackoff = null, TimeSpan? timeout = null);
 
     /// <summary>
@@ -60,7 +61,7 @@ public interface IJobContext<in TIn, TOut>
     /// <param name="jobId">Identifier of the job to stop. It is normalized, so it can be passed as-is or already normalized.</param>
     /// <param name="timeout">Defaults to 120 seconds. The time to wait for the stop-job request.</param>
     /// <returns>The result of the stop attempt.</returns>
-    Task<StopJobCommandResult> StopJobAsync(string jobId, TimeSpan? timeout = null);
+    Task<JobStoppedResult> StopJobAsync(string jobId, TimeSpan? timeout = null);
 
     /// <summary>
     /// Gets the state of all running background jobs.
@@ -68,7 +69,7 @@ public interface IJobContext<in TIn, TOut>
     /// <param name="requestId">Request identifier.</param>
     /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<RespondWorkersInfo<TOut>> GetAllJobsAsync(TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetAllJobsAsync(TimeSpan? timeout = null, long requestId = 0);
 
     /// <summary>
     /// Gets the state of running background jobs page by page.
@@ -78,7 +79,7 @@ public interface IJobContext<in TIn, TOut>
     /// <param name="take">The number of jobs to return.</param>
     /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<RespondWorkersInfo<TOut>> GetJobsPaginateAsync(int skip, int take, TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take, TimeSpan? timeout = null, long requestId = 0);
 
     /// <summary>
     /// Gets the state of running background jobs by a list of identifiers.
@@ -87,5 +88,5 @@ public interface IJobContext<in TIn, TOut>
     /// <param name="jobIds">The list of job identifiers.</param>
     /// <param name="timeout">Defaults to 120 seconds. The time to wait for the request.</param>
     /// <returns>Information about the background jobs.</returns>
-    Task<RespondWorkersInfo<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds, TimeSpan? timeout = null, long requestId = 0);
+    Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds, TimeSpan? timeout = null, long requestId = 0);
 }

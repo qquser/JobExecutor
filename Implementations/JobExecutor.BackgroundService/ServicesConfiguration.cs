@@ -23,7 +23,7 @@ public static class ServicesConfiguration
         services.AddSingleton<IJobRunner<TIn, TOut>, JobRunner<TIn, TOut>>();
         services.AddSingleton<IJobStateMapper<TIn, TOut>, JobStateMapper<TIn, TOut>>();
         services.AddSingleton<IJobCommandProcessor<TIn, TOut>, JobCommandProcessor<TIn, TOut>>();
-        services.AddSingleton<IJobContext<TIn, TOut>, BackgroundJobContext<TIn, TOut>>();
+        services.AddSingleton<IJobManager<TIn, TOut>, BackgroundJobManager<TIn, TOut>>();
         services.AddHostedService<JobEngine<TIn, TOut>>();
         return services;
     }

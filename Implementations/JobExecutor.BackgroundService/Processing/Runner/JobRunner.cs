@@ -11,7 +11,7 @@ internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
     where TIn : class
     where TOut : class
 {
-    public async Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run,
+    public async Task<JobCompletedResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run,
         CancellationToken token)
     {
         for (var attempt = 0; ; attempt++)
@@ -20,19 +20,19 @@ internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
             {
                 var success = await job.DoAsync(run.Input, token);
                 return success
-                    ? new JobDoneCommandResult(true, string.Empty, run.JobId)
-                    : new JobDoneCommandResult(false, "cancelled", run.JobId);
+                    ? new JobCompletedResult(true, string.Empty, run.JobId)
+                    : new JobCompletedResult(false, "cancelled", run.JobId);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
-                return new JobDoneCommandResult(false, "cancelled", run.JobId);
+                return new JobCompletedResult(false, "cancelled", run.JobId);
             }
             catch (Exception ex)
             {
                 if (attempt >= run.MaxNrOfRetries)
                 {
                     logger.LogError(ex, "Job {JobId} failed after {Attempts} attempts, retries exhausted.", run.JobId, attempt + 1);
-                    return new JobDoneCommandResult(false, ex.Message, run.JobId);
+                    return new JobCompletedResult(false, ex.Message, run.JobId);
                 }
 
                 logger.LogWarning(ex, "Job {JobId} attempt {Attempt} failed, retrying.", run.JobId, attempt + 1);

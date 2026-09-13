@@ -7,7 +7,7 @@ internal interface IJobEntryFactory<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    JobRequest<TIn> CreateRequest(string jobId, TIn input, int? maxNrOfRetries, TimeSpan? minBackoff, bool isCreateCommand);
+    JobRequest<TIn> CreateRequest(string jobId, TIn input, int? maxNrOfRetries, TimeSpan? minBackoff, bool isStartCommand);
 
     JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IJob<TIn, TOut> job);
 }

@@ -1,4 +1,5 @@
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 
@@ -8,13 +9,23 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    public RespondWorkersInfo<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset,
+    public JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset,
         int totalCount, long requestId)
     {
         var data = subset.ToDictionary(
             kv => kv.Key,
-            kv => new ReplyWorkerInfo<TOut>(kv.Value.Job.GetCurrentState(kv.Key)));
+            kv => new JobStateInfo<TOut>
+            {
+                Success = true,
+                ErrorMessage = string.Empty,
+                Result = kv.Value.Job.GetCurrentState(kv.Key),
+            });
 
-        return new RespondWorkersInfo<TOut>(requestId, data, totalCount);
+        return new JobsQueryResult<TOut>
+        {
+            RequestId = requestId,
+            Jobs = data,
+            TotalCount = totalCount,
+        };
     }
 }

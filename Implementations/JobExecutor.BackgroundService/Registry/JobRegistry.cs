@@ -10,10 +10,6 @@ internal sealed class JobRegistry<TIn, TOut> : IJobRegistry<TIn, TOut>
 {
     private readonly ConcurrentDictionary<string, JobEntry<TIn, TOut>> _entries = new();
 
-    public JobRegistry()
-    {
-    }
-
     public bool TryAdd(JobEntry<TIn, TOut> entry) => _entries.TryAdd(entry.Run.JobId, entry);
 
     public bool TryGet(string jobId, out JobEntry<TIn, TOut> entry) => _entries.TryGetValue(jobId, out entry!);

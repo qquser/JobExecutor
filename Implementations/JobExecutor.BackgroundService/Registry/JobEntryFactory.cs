@@ -13,7 +13,7 @@ internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
     private readonly TimeSpan _defaultBackoff = TimeSpan.FromSeconds(1);
 
     public JobRequest<TIn> CreateRequest(string jobId, TIn input, int? maxNrOfRetries,
-        TimeSpan? minBackoff, bool isCreateCommand)
+        TimeSpan? minBackoff, bool isStartCommand)
     {
         var id = string.IsNullOrWhiteSpace(jobId) ? Guid.NewGuid().ToString() : jobId;
 
@@ -28,11 +28,11 @@ internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
             },
             Signals = new JobSignals
             {
-                IsCreateCommand = isCreateCommand,
+                IsStartCommand = isStartCommand,
                 CreatedAt = DateTimeOffset.UtcNow,
                 Cts = new CancellationTokenSource(),
-                Created = new TaskCompletionSource<JobCreatedCommandResult>(TaskCreationOptions.RunContinuationsAsynchronously),
-                Done = new TaskCompletionSource<JobDoneCommandResult>(TaskCreationOptions.RunContinuationsAsynchronously),
+                Started = new TaskCompletionSource<JobStartedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
+                Completed = new TaskCompletionSource<JobCompletedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
             },
         };
     }

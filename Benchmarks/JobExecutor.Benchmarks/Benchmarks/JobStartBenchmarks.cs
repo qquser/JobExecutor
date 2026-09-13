@@ -10,19 +10,19 @@ using Microsoft.Extensions.Logging;
 namespace JobExecutor.Benchmarks.Benchmarks;
 
 [MemoryDiagnoser]
-public class JobCreationBenchmarks
+public class JobStartBenchmarks
 {
     private readonly ServiceProvider _provider;
-    private readonly IJobContext<NoOpJobInput, NoOpJobResult> _context;
+    private readonly IJobManager<NoOpJobInput, NoOpJobResult> _manager;
     private readonly NoOpJobInput _input;
 
-    public JobCreationBenchmarks()
+    public JobStartBenchmarks()
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddBackgroundJobs<NoOpJobInput, NoOpJobResult, NoOpJob>();
         _provider = services.BuildServiceProvider();
-        _context = _provider.GetRequiredService<IJobContext<NoOpJobInput, NoOpJobResult>>();
+        _manager = _provider.GetRequiredService<IJobManager<NoOpJobInput, NoOpJobResult>>();
         _input = new NoOpJobInput();
 
         foreach (var hostedService in _provider.GetServices<IHostedService>())
@@ -39,19 +39,19 @@ public class JobCreationBenchmarks
     }
 
     [Benchmark(Baseline = true)]
-    public Task<JobCreatedCommandResult> CreateJob()
-        => _context.CreateJobAsync(Guid.NewGuid().ToString(), _input);
+    public Task<JobStartedResult> StartJob()
+        => _manager.StartJobAsync(Guid.NewGuid().ToString(), _input);
 
     [Benchmark]
-    public Task<JobDoneCommandResult> DoJob()
-        => _context.DoJobAsync(Guid.NewGuid().ToString(), _input);
+    public Task<JobCompletedResult> RunJob()
+        => _manager.RunJobAsync(Guid.NewGuid().ToString(), _input);
 
     [Benchmark]
-    public async Task CreateJob_Concurrent1000()
+    public async Task StartJob_Concurrent1000()
     {
-        var creates = Enumerable.Range(0, 1000)
-            .Select(_ => _context.CreateJobAsync(Guid.NewGuid().ToString(), _input));
+        var starts = Enumerable.Range(0, 1000)
+            .Select(_ => _manager.StartJobAsync(Guid.NewGuid().ToString(), _input));
 
-        await Task.WhenAll(creates);
+        await Task.WhenAll(starts);
     }
 }

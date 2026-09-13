@@ -8,5 +8,5 @@ internal interface IJobRunner<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    Task<JobDoneCommandResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run, CancellationToken token);
+    Task<JobCompletedResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run, CancellationToken token);
 }

@@ -25,24 +25,24 @@ internal sealed class JobCommandProcessor<TIn, TOut>(
         if (!registry.TryAdd(entry))
         {
             var message = $"{entry.Run.JobId} job exists.";
-            if (entry.Signals.IsCreateCommand)
-                entry.Signals.Created.TrySetResult(new JobCreatedCommandResult(false, message, entry.Run.JobId));
+            if (entry.Signals.IsStartCommand)
+                entry.Signals.Started.TrySetResult(new JobStartedResult(false, message, entry.Run.JobId));
             else
-                entry.Signals.Done.TrySetResult(new JobDoneCommandResult(false, message, entry.Run.JobId));
+                entry.Signals.Completed.TrySetResult(new JobCompletedResult(false, message, entry.Run.JobId));
 
             return;
         }
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(entry.Signals.Cts.Token, stoppingToken);
 
-        if (entry.Signals.IsCreateCommand)
+        if (entry.Signals.IsStartCommand)
         {
-            entry.Signals.Created.TrySetResult(new JobCreatedCommandResult(true, string.Empty, entry.Run.JobId));
+            entry.Signals.Started.TrySetResult(new JobStartedResult(true, string.Empty, entry.Run.JobId));
             await runner.RunAsync(job, entry.Run, linked.Token);
         }
         else
         {
-            entry.Signals.Done.TrySetResult(await runner.RunAsync(job, entry.Run, linked.Token));
+            entry.Signals.Completed.TrySetResult(await runner.RunAsync(job, entry.Run, linked.Token));
         }
 
         registry.TryRemove(entry.Run.JobId, out _);
