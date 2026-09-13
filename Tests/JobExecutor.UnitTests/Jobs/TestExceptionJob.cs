@@ -4,7 +4,7 @@ namespace JobExecutor.UnitTests.Jobs;
 
 public sealed class TestExceptionJob : IJob<TestExceptionJobInput, TestForEachJobResult>
 {
-    public Task<bool> DoAsync(TestExceptionJobInput input, CancellationToken token)
+    public Task DoAsync(TestExceptionJobInput input, CancellationToken token)
         => throw new Exception("Test exception.");
 
     public TestForEachJobResult GetCurrentState() => new(0);

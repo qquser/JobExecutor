@@ -18,10 +18,10 @@ internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
         {
             try
             {
-                var success = await job.DoAsync(run.Input, token);
-                return success
-                    ? new JobCompletedResult(true, string.Empty, run.JobId)
-                    : new JobCompletedResult(false, "cancelled", run.JobId);
+                await job.DoAsync(run.Input, token);
+                return token.IsCancellationRequested
+                    ? new JobCompletedResult(false, "cancelled", run.JobId)
+                    : new JobCompletedResult(true, string.Empty, run.JobId);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {

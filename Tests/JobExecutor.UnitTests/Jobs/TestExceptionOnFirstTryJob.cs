@@ -6,20 +6,17 @@ public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJob
 {
     private int _attempts;
 
-    public async Task<bool> DoAsync(TestExceptionOnFirstTryJobInput input, CancellationToken token)
+    public async Task DoAsync(TestExceptionOnFirstTryJobInput input, CancellationToken token)
     {
         if (_attempts++ == 0)
             throw new Exception("First attempt failure.");
 
         foreach (var item in Enumerable.Range(0, input.Count))
         {
-            if (token.IsCancellationRequested)
-                return false;
+            token.ThrowIfCancellationRequested();
 
             await Task.Delay(10, token);
         }
-
-        return true;
     }
 
     public TestExceptionOnFirstTryJobResult GetCurrentState() => new(0);

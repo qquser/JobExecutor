@@ -4,7 +4,7 @@ namespace JobExecutor.UnitTests.Jobs;
 
 public sealed class TestSameInputDifferentOutputJob : IJob<TestForEachJobInput, TestOtherJobResult>
 {
-    public Task<bool> DoAsync(TestForEachJobInput input, CancellationToken token) => Task.FromResult(true);
+    public Task DoAsync(TestForEachJobInput input, CancellationToken token) => Task.CompletedTask;
 
     public TestOtherJobResult GetCurrentState() => new(0);
 }

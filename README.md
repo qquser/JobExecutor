@@ -25,18 +25,15 @@ public sealed class EmailJob : IJob<EmailJobInput, EmailJobState>
 {
     private int _sent;
 
-    public async Task<bool> DoAsync(EmailJobInput input, CancellationToken token)
+    public async Task DoAsync(EmailJobInput input, CancellationToken token)
     {
         foreach (var recipient in input.Recipients)
         {
-            if (token.IsCancellationRequested)
-                return false;
+            token.ThrowIfCancellationRequested();
 
             await SendAsync(recipient, token);
             _sent++;
         }
-
-        return true;
     }
 
     public EmailJobState GetCurrentState() => new(_sent);

@@ -4,8 +4,8 @@ namespace JobExecutor.Benchmarks.Jobs;
 
 public sealed class NoOpJob : IJob<NoOpJobInput, NoOpJobResult>
 {
-    public Task<bool> DoAsync(NoOpJobInput input, CancellationToken token)
-        => Task.FromResult(true);
+    public Task DoAsync(NoOpJobInput input, CancellationToken token)
+        => Task.CompletedTask;
 
     public NoOpJobResult GetCurrentState() => new();
 }

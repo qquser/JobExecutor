@@ -9,7 +9,7 @@ public interface IJob<in TIn, out TOut>
     where TIn : class
     where TOut : class
 {
-    Task<bool> DoAsync(TIn input, CancellationToken token);
+    Task DoAsync(TIn input, CancellationToken token);
 
     /// <summary>
     /// Describes the state of the fields of the IJob class that are changed by the DoAsync method.
