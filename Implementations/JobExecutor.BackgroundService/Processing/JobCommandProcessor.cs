@@ -24,7 +24,7 @@ internal sealed class JobCommandProcessor<TIn, TOut>(
 
         if (!registry.TryAdd(entry))
         {
-            var message = $"{entry.Run.JobId} job exists.";
+            var message = $"{entry.Run.JobId.Value} job exists.";
             if (entry.Signals.IsStartCommand)
                 entry.Signals.Started.TrySetResult(new JobStartedResult(false, message, entry.Run.JobId));
             else

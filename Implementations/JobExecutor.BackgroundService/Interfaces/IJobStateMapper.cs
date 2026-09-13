@@ -1,3 +1,4 @@
+using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Models;
 
@@ -7,5 +8,5 @@ internal interface IJobStateMapper<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<string, JobEntry<TIn, TOut>>> subset, int totalCount);
+    JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, JobEntry<TIn, TOut>>> subset, int totalCount);
 }

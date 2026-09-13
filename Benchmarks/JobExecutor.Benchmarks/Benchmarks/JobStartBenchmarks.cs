@@ -39,17 +39,17 @@ public class JobStartBenchmarks
 
     [Benchmark(Baseline = true)]
     public Task<JobStartedResult> StartJob()
-        => _manager.StartJobAsync(Guid.NewGuid().ToString(), _input);
+        => _manager.StartJobAsync(new JobId(Guid.NewGuid().ToString()), _input);
 
     [Benchmark]
     public Task<JobCompletedResult> RunJob()
-        => _manager.RunJobAsync(Guid.NewGuid().ToString(), _input);
+        => _manager.RunJobAsync(new JobId(Guid.NewGuid().ToString()), _input);
 
     [Benchmark]
     public async Task StartJob_Concurrent1000()
     {
         var starts = Enumerable.Range(0, 1000)
-            .Select(_ => _manager.StartJobAsync(Guid.NewGuid().ToString(), _input));
+            .Select(_ => _manager.StartJobAsync(new JobId(Guid.NewGuid().ToString()), _input));
 
         await Task.WhenAll(starts);
     }

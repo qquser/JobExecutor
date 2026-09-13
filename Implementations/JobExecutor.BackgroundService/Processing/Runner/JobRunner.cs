@@ -31,11 +31,11 @@ internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
             {
                 if (attempt >= run.MaxNrOfRetries)
                 {
-                    logger.LogError(ex, "Job {JobId} failed after {Attempts} attempts, retries exhausted.", run.JobId, attempt + 1);
+                    logger.LogError(ex, "Job {JobId} failed after {Attempts} attempts, retries exhausted.", run.JobId.Value, attempt + 1);
                     return new JobCompletedResult(false, ex.Message, run.JobId);
                 }
 
-                logger.LogWarning(ex, "Job {JobId} attempt {Attempt} failed, retrying.", run.JobId, attempt + 1);
+                logger.LogWarning(ex, "Job {JobId} attempt {Attempt} failed, retrying.", run.JobId.Value, attempt + 1);
                 await Task.Delay(run.Backoff, token);
             }
         }

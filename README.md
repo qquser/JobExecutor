@@ -16,6 +16,7 @@ A .NET library for running background jobs in-process: submit a job, track its s
 
 ```csharp
 using JobExecutor.Abstractions.Interfaces;
+using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,11 +39,11 @@ public sealed class EmailJob : IJob<EmailJobInput, EmailJobState>
         return true;
     }
 
-    public EmailJobState GetCurrentState(string jobId) => new(jobId, _sent);
+    public EmailJobState GetCurrentState() => new(_sent);
 }
 
 public sealed record EmailJobInput(IReadOnlyList<string> Recipients);
-public sealed record EmailJobState(string Id, int Sent);
+public sealed record EmailJobState(int Sent);
 
 // 2. Register the job.
 var services = new ServiceCollection();
@@ -52,8 +53,8 @@ var provider = services.BuildServiceProvider();
 // 3. Start/run/stop/query through IJobManager.
 var manager = provider.GetRequiredService<IJobManager<EmailJobInput, EmailJobState>>();
 
-var started = await manager.StartJobAsync("job-1", new EmailJobInput(new[] { "a@x.io" }));
-var done    = await manager.RunJobAsync("job-2", new EmailJobInput(new[] { "b@x.io" }));
+var started = await manager.StartJobAsync(new JobId("job-1"), new EmailJobInput(new[] { "a@x.io" }));
+var done    = await manager.RunJobAsync(new JobId("job-2"), new EmailJobInput(new[] { "b@x.io" }));
 var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 ```
 
@@ -61,7 +62,7 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 
 | Abstraction | Role |
 |---|---|
-| `IJob<TIn, TOut>` | A job: `DoAsync(input, token)` + `GetCurrentState(jobId)`. Registered **scoped**. |
+| `IJob<TIn, TOut>` | A job: `DoAsync(input, token)` + `GetCurrentState()`. Registered **scoped**. |
 | `IJobManager<TIn, TOut>` | Entry point to start, run, stop, and query jobs. |
 | `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). Each job must use its **own input and output model types** (`TIn`, `TOut`) — reusing either model for another job fails fast. |
 | Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `JobsQueryResult<TOut>`, `JobStateInfo<TOut>`. |

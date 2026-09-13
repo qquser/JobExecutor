@@ -23,10 +23,10 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         where TIn : class
         where TOut : class
 {
-    public async Task<JobStartedResult> StartJobAsync(string jobId, TIn input)
+    public async Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input)
     {
-        if (string.IsNullOrWhiteSpace(jobId))
-            return new JobStartedResult(false, "Job id is required.", string.Empty);
+        if (string.IsNullOrWhiteSpace(jobId.Value))
+            return new JobStartedResult(false, "Job id is required.", jobId);
 
         var request = entryFactory.CreateRequest(jobId, input, isStartCommand: true);
         await channel.Writer.WriteAsync(request);
@@ -37,15 +37,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not start within the timeout.", request.Run.JobId);
+            logger.LogWarning("Job {JobId} did not start within the timeout.", request.Run.JobId.Value);
             return new JobStartedResult(false, "Timeout.", request.Run.JobId);
         }
     }
 
-    public async Task<JobCompletedResult> RunJobAsync(string jobId, TIn input)
+    public async Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input)
     {
-        if (string.IsNullOrWhiteSpace(jobId))
-            return new JobCompletedResult(false, "Job id is required.", string.Empty);
+        if (string.IsNullOrWhiteSpace(jobId.Value))
+            return new JobCompletedResult(false, "Job id is required.", jobId);
 
         var request = entryFactory.CreateRequest(jobId, input, isStartCommand: false);
         await channel.Writer.WriteAsync(request);
@@ -56,12 +56,12 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.Run.JobId);
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.Run.JobId.Value);
             return new JobCompletedResult(false, "Timeout.", request.Run.JobId);
         }
     }
 
-    public Task<JobStoppedResult> StopJobAsync(string jobId)
+    public Task<JobStoppedResult> StopJobAsync(JobId jobId)
     {
         if (registry.TryGet(jobId, out var entry))
         {
@@ -69,7 +69,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
             return Task.FromResult(new JobStoppedResult(true, string.Empty));
         }
 
-        return Task.FromResult(new JobStoppedResult(false, $"Job list does not contain {jobId}"));
+        return Task.FromResult(new JobStoppedResult(false, $"Job list does not contain {jobId.Value}"));
     }
 
     public Task<JobsQueryResult<TOut>> GetAllJobsAsync()
@@ -78,6 +78,6 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
     public Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take)
         => Task.FromResult(stateMapper.Map(registry.GetPage(skip, take), registry.Count));
 
-    public Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<string> jobIds)
+    public Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<JobId> jobIds)
         => Task.FromResult(stateMapper.Map(registry.GetByIds(jobIds), registry.Count));
 }

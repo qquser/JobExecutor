@@ -1,3 +1,5 @@
+using JobExecutor.Abstractions.Models;
+
 namespace JobExecutor.BackgroundService.Models;
 
 /// <summary>
@@ -7,7 +9,7 @@ namespace JobExecutor.BackgroundService.Models;
 internal sealed record JobRunModel<TIn>
     where TIn : class
 {
-    public required string JobId { get; init; }
+    public required JobId JobId { get; init; }
     public required TIn Input { get; init; }
     public required int MaxNrOfRetries { get; init; }
     public required TimeSpan Backoff { get; init; }

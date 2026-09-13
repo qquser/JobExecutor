@@ -12,7 +12,7 @@ internal sealed class JobEntryFactory<TIn, TOut>(IOptions<JobRetryOptions> retry
     where TIn : class
     where TOut : class
 {
-    public JobRequest<TIn> CreateRequest(string jobId, TIn input, bool isStartCommand)
+    public JobRequest<TIn> CreateRequest(JobId jobId, TIn input, bool isStartCommand)
     {
         var retry = retryOptions.Value;
 
