@@ -1,5 +1,3 @@
-using JobExecutor.Abstractions.Models;
-
 namespace JobExecutor.Abstractions.Models.Queries;
 
 public sealed record ActiveJobsQueryResult<TOut>

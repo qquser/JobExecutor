@@ -14,12 +14,11 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
     private readonly IHostedService[] _hostedServices;
 
     public BackgroundJobsFixture(
-        Action<JobRetryOptions>? configureRetry = null,
         Action<JobTimeoutOptions>? configureTimeout = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddBackgroundJobs<TIn, TOut, TJob>(configureRetry, configureTimeout);
+        services.AddBackgroundJobs<TIn, TOut, TJob>(configureTimeout);
         Provider = services.BuildServiceProvider();
 
         _hostedServices = Provider.GetServices<IHostedService>().ToArray();

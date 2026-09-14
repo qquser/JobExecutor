@@ -71,11 +71,11 @@ public class AddBackgroundJobsTests
         services.AddLogging();
 
         services.AddBackgroundJobs<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        services.AddBackgroundJobs<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>();
+        services.AddBackgroundJobs<TestOtherJobInput, TestOtherJobResult, TestOtherJob>();
 
         using var provider = services.BuildServiceProvider();
 
         Assert.NotNull(provider.GetService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>());
-        Assert.NotNull(provider.GetService<IActiveJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>());
+        Assert.NotNull(provider.GetService<IActiveJobManager<TestOtherJobInput, TestOtherJobResult>>());
     }
 }

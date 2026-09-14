@@ -1,3 +1,4 @@
+using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService.Models;
 
@@ -7,17 +8,19 @@ internal interface IJobRegistry<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    bool TryAdd(JobEntry<TIn, TOut> entry);
+    bool Contains(JobId jobId);
 
-    bool TryGet(JobId jobId, out JobEntry<TIn, TOut> entry);
+    void Add(JobId jobId, RegisteredJob<TIn, TOut> job);
 
-    bool TryRemove(JobId jobId, out JobEntry<TIn, TOut> entry);
+    bool TryGet(JobId jobId, out RegisteredJob<TIn, TOut> job);
+
+    bool TryRemove(JobId jobId, out RegisteredJob<TIn, TOut> job);
 
     int Count { get; }
 
-    IReadOnlyCollection<KeyValuePair<JobId, JobEntry<TIn, TOut>>> GetAll();
+    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetAll();
 
-    IReadOnlyCollection<KeyValuePair<JobId, JobEntry<TIn, TOut>>> GetPage(int skip, int take);
+    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetPage(int skip, int take);
 
-    IReadOnlyCollection<KeyValuePair<JobId, JobEntry<TIn, TOut>>> GetByIds(ICollection<JobId> jobIds);
+    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetByIds(ICollection<JobId> jobIds);
 }

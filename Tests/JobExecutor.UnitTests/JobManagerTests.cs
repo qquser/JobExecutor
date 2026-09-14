@@ -42,27 +42,13 @@ public class JobManagerTests
     [Fact]
     public async Task RunJobAsync_ShouldReturnFailure_WhenJobAlwaysThrows()
     {
-        using var fixture = new BackgroundJobsFixture<TestExceptionJobInput, TestForEachJobResult, TestExceptionJob>(
-            configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
+        using var fixture = new BackgroundJobsFixture<TestExceptionJobInput, TestForEachJobResult, TestExceptionJob>();
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestExceptionJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionJobInput(1));
 
         Assert.False(result.Success);
-    }
-
-    [Fact]
-    public async Task RunJobAsync_ShouldReturnSuccess_WhenFirstAttemptFailsButRetrySucceeds()
-    {
-        using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>(
-            configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
-        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>();
-        var jobId = new JobId(Guid.NewGuid().ToString());
-
-        var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1));
-
-        Assert.True(result.Success);
     }
 
     [Theory]
@@ -139,7 +125,7 @@ public class JobManagerTests
         var info = await manager.GetAllJobsAsync();
 
         Assert.Equal(1, info.TotalCount);
-        Assert.True(info.Jobs[jobId].Success);
+        Assert.True(info.Jobs.ContainsKey(jobId));
     }
 
     [Fact]
@@ -153,7 +139,7 @@ public class JobManagerTests
         var info = await manager.GetJobsPageAsync(0, 10);
 
         Assert.Equal(1, info.TotalCount);
-        Assert.True(info.Jobs[jobId].Success);
+        Assert.True(info.Jobs.ContainsKey(jobId));
     }
 
     [Fact]
@@ -167,7 +153,7 @@ public class JobManagerTests
         var info = await manager.GetJobsByIdsAsync(new[] { jobId });
 
         Assert.Equal(1, info.TotalCount);
-        Assert.True(info.Jobs[jobId].Success);
+        Assert.True(info.Jobs.ContainsKey(jobId));
     }
 
     [Fact]
@@ -187,25 +173,22 @@ public class JobManagerTests
     }
 
     [Fact]
-    public async Task GetJobsPageAsync_ShouldReturnJobsInStartOrder_WhenPagingByOne()
+    public async Task GetJobsPageAsync_ShouldReturnJobsOrderedByJobId_WhenPagingByOne()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
-        var jobIds = new List<JobId>();
 
-        for (var i = 0; i < 3; i++)
-        {
-            var id = new JobId(Guid.NewGuid().ToString());
-            jobIds.Add(id);
-            await manager.StartJobAsync(id, new TestForEachJobInput(100));
-            await Task.Delay(20);
-        }
+        // Ids inserted out of ordinal order to prove paging sorts by JobId, not by insertion.
+        var jobIds = new List<JobId> { new("c"), new("a"), new("b") };
+        foreach (var jobId in jobIds)
+            await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
 
-        for (var page = 0; page < jobIds.Count; page++)
+        var expected = jobIds.OrderBy(id => id.Value, StringComparer.Ordinal).ToList();
+        for (var page = 0; page < expected.Count; page++)
         {
             var result = await manager.GetJobsPageAsync(page, 1);
 
-            Assert.Equal(jobIds[page], result.Jobs.Keys.Single());
+            Assert.Equal(expected[page], result.Jobs.Keys.Single());
         }
     }
 
@@ -230,7 +213,6 @@ public class JobManagerTests
 
         Assert.False(result.Success);
         Assert.Equal("cancelled", result.Result);
-        Assert.Equal(jobId, result.JobId);
     }
 
     private static async Task WaitUntilJobIsRunningAsync(

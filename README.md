@@ -1,11 +1,10 @@
 # JobExecutor
 
-A .NET library for running background jobs in-process: submit a job, track its state, retry on failure, and query running jobs — all behind two abstractions (`IActiveJob` and `IActiveJobManager`).
+A .NET library for running background jobs in-process: submit a job, track its state, and query running jobs — all behind two abstractions (`IActiveJob` and `IActiveJobManager`).
 
 ## Features
 
 - **Start-and-forget or await**: `StartJobAsync` returns once the job has started and keeps running in the background (you can still reach it by `JobId`); `RunJobAsync` waits for completion.
-- **Retries with backoff**: first attempt plus `maxNrOfRetries`, backoff spread across `minBackoff`..`maxBackoff`.
 - **Deduplication**: submitting the same `JobId` twice returns `"<id> job exists."` for the duplicates.
 - **Cancellation**: `StopJobAsync` cancels a running job via its `CancellationToken`.
 - **Query & pagination**: list all / page by start time / fetch by ids.

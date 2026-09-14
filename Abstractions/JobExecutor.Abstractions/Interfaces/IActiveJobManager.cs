@@ -14,23 +14,19 @@ public interface IActiveJobManager<in TIn, TOut>
 {
     /// <summary>
     /// Starts a background job without waiting for it to complete. If IActiveJob.DoAsync throws,
-    /// its execution is retried, which does not affect job start. The retry policy and timeout
-    /// are configured once at registration via <c>AddBackgroundJobs</c>.
+    /// the job fails, which does not affect job start. The timeout is configured once at registration
+    /// via <c>AddBackgroundJobs</c>.
     /// </summary>
-    /// <param name="input">Input parameters for running the job. On each retry after an error,
-    /// IActiveJob.DoAsync is restarted from the beginning with the same input model that was passed to this method.</param>
+    /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
     /// <returns>The result of starting the background job.</returns>
     Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input);
 
     /// <summary>
-    /// Runs a background job and waits for it to complete. If IActiveJob.DoAsync throws, its execution is retried
-    /// the configured number of times. Retries do not interrupt the wait, but once the retry count is exhausted,
-    /// the result is returned. The retry policy and timeout are configured once at registration via
-    /// <c>AddBackgroundJobs</c>.
+    /// Runs a background job and waits for it to complete. If IActiveJob.DoAsync throws, the error is
+    /// returned in the result. The timeout is configured once at registration via <c>AddBackgroundJobs</c>.
     /// </summary>
-    /// <param name="input">Input parameters for running the job. On each retry after an error,
-    /// IActiveJob.DoAsync is restarted from the beginning with the same input model that was passed to this method.</param>
+    /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
     /// <returns>The result of running the background job.</returns>
     Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input);

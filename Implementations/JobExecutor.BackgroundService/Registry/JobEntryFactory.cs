@@ -1,46 +1,26 @@
-using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
-using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
-using Microsoft.Extensions.Options;
 
 namespace JobExecutor.BackgroundService.Registry;
 
-internal sealed class JobEntryFactory<TIn, TOut>(IOptions<JobRetryOptions> retryOptions)
-    : IJobEntryFactory<TIn, TOut>
+internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
     where TIn : class
     where TOut : class
 {
     public JobRequest<TIn> CreateRequest(JobId jobId, TIn input, bool isStartCommand)
     {
-        var retry = retryOptions.Value;
-
         return new JobRequest<TIn>
         {
-            Run = new JobRunModel<TIn>
-            {
-                JobId = jobId,
-                Input = input,
-                MaxNrOfRetries = retry.MaxNrOfRetries,
-                Backoff = retry.MinBackoff,
-            },
+            JobId = jobId,
+            Input = input,
             Signals = new JobSignals
             {
                 IsStartCommand = isStartCommand,
-                CreatedAt = DateTimeOffset.UtcNow,
                 Cts = new CancellationTokenSource(),
                 Started = new TaskCompletionSource<JobStartedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
                 Completed = new TaskCompletionSource<JobCompletedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
             },
         };
     }
-
-    public JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IActiveJob<TIn, TOut> job)
-        => new JobEntry<TIn, TOut>
-        {
-            Run = request.Run,
-            Signals = request.Signals,
-            Job = job,
-        };
 }

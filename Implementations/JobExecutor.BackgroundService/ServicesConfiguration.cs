@@ -1,11 +1,9 @@
 using System.Threading.Channels;
 using JobExecutor.Abstractions.Interfaces;
-using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using JobExecutor.BackgroundService.Processing;
-using JobExecutor.BackgroundService.Processing.Runner;
 using JobExecutor.BackgroundService.Registry;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +13,6 @@ public static class ServicesConfiguration
 {
     public static IServiceCollection AddBackgroundJobs<TIn, TOut, TJob>(
         this IServiceCollection services,
-        Action<JobRetryOptions>? configureRetry = null,
         Action<JobTimeoutOptions>? configureTimeout = null)
         where TIn : class
         where TOut : class
@@ -48,9 +45,6 @@ public static class ServicesConfiguration
 
         services.AddOptions();
 
-        if (configureRetry is not null)
-            services.Configure<JobRetryOptions>(configureRetry);
-
         if (configureTimeout is not null)
             services.Configure<JobTimeoutOptions>(configureTimeout);
 
@@ -58,7 +52,6 @@ public static class ServicesConfiguration
         services.AddSingleton(_ => Channel.CreateUnbounded<JobRequest<TIn>>());
         services.AddSingleton<IJobRegistry<TIn, TOut>, JobRegistry<TIn, TOut>>();
         services.AddSingleton<IJobEntryFactory<TIn, TOut>, JobEntryFactory<TIn, TOut>>();
-        services.AddSingleton<IJobRunner<TIn, TOut>, JobRunner<TIn, TOut>>();
         services.AddSingleton<IJobStateMapper<TIn, TOut>, JobStateMapper<TIn, TOut>>();
         services.AddSingleton<IJobCommandProcessor<TIn, TOut>, JobCommandProcessor<TIn, TOut>>();
         services.AddSingleton<IActiveJobManager<TIn, TOut>, BackgroundJobManager<TIn, TOut>>();

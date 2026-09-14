@@ -1,3 +1,3 @@
 namespace JobExecutor.Abstractions.Models;
 
-public sealed record JobCompletedResult(bool Success, string Result, JobId JobId);
+public sealed record JobCompletedResult(bool Success, string Result);

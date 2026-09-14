@@ -26,7 +26,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
     public async Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input)
     {
         if (string.IsNullOrWhiteSpace(jobId.Value))
-            return new JobStartedResult(false, "Job id is required.", jobId);
+            return new JobStartedResult(false, "Job id is required.");
 
         var request = entryFactory.CreateRequest(jobId, input, isStartCommand: true);
         await channel.Writer.WriteAsync(request);
@@ -37,15 +37,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not start within the timeout.", request.Run.JobId.Value);
-            return new JobStartedResult(false, "Timeout.", request.Run.JobId);
+            logger.LogWarning("Job {JobId} did not start within the timeout.", request.JobId.Value);
+            return new JobStartedResult(false, "Timeout.");
         }
     }
 
     public async Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input)
     {
         if (string.IsNullOrWhiteSpace(jobId.Value))
-            return new JobCompletedResult(false, "Job id is required.", jobId);
+            return new JobCompletedResult(false, "Job id is required.");
 
         var request = entryFactory.CreateRequest(jobId, input, isStartCommand: false);
         await channel.Writer.WriteAsync(request);
@@ -56,16 +56,16 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.Run.JobId.Value);
-            return new JobCompletedResult(false, "Timeout.", request.Run.JobId);
+            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.JobId.Value);
+            return new JobCompletedResult(false, "Timeout.");
         }
     }
 
     public Task<JobStoppedResult> StopJobAsync(JobId jobId)
     {
-        if (registry.TryGet(jobId, out var entry))
+        if (registry.TryGet(jobId, out var registered))
         {
-            entry.Signals.Cts.Cancel();
+            registered.Cts.Cancel();
             return Task.FromResult(new JobStoppedResult(true, string.Empty));
         }
 

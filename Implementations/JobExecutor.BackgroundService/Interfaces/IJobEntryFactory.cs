@@ -1,4 +1,3 @@
-using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
 using JobExecutor.BackgroundService.Models;
 
@@ -9,6 +8,4 @@ internal interface IJobEntryFactory<TIn, TOut>
     where TOut : class
 {
     JobRequest<TIn> CreateRequest(JobId jobId, TIn input, bool isStartCommand);
-
-    JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IActiveJob<TIn, TOut> job);
 }
