@@ -10,5 +10,5 @@ internal interface IJobEntryFactory<TIn, TOut>
 {
     JobRequest<TIn> CreateRequest(JobId jobId, TIn input, bool isStartCommand);
 
-    JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IJob<TIn, TOut> job);
+    JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IActiveJob<TIn, TOut> job);
 }

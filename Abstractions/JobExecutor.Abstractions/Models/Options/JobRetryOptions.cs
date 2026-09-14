@@ -6,7 +6,7 @@ namespace JobExecutor.Abstractions.Models.Options;
 public sealed record JobRetryOptions
 {
     /// <summary>
-    /// The first attempt plus this many retries, so IJob.DoAsync is invoked at most
+    /// The first attempt plus this many retries, so IActiveJob.DoAsync is invoked at most
     /// MaxNrOfRetries + 1 times when exceptions occur.
     /// </summary>
     public int MaxNrOfRetries { get; set; } = 5;

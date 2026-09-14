@@ -18,7 +18,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
                         ILogger<BackgroundJobManager<TIn, TOut>> logger,
                         IOptions<JobTimeoutOptions> timeoutOptions)
 
-    : IJobManager<TIn, TOut>
+    : IActiveJobManager<TIn, TOut>
 
         where TIn : class
         where TOut : class
@@ -72,12 +72,12 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         return Task.FromResult(new JobStoppedResult(false, $"Job list does not contain {jobId.Value}"));
     }
 
-    public Task<JobsQueryResult<TOut>> GetAllJobsAsync()
+    public Task<ActiveJobsQueryResult<TOut>> GetAllJobsAsync()
         => Task.FromResult(stateMapper.Map(registry.GetAll(), registry.Count));
 
-    public Task<JobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take)
+    public Task<ActiveJobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take)
         => Task.FromResult(stateMapper.Map(registry.GetPage(skip, take), registry.Count));
 
-    public Task<JobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<JobId> jobIds)
+    public Task<ActiveJobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<JobId> jobIds)
         => Task.FromResult(stateMapper.Map(registry.GetByIds(jobIds), registry.Count));
 }

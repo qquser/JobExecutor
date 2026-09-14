@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.UnitTests.Jobs;
 
-public sealed class TestForEachJob : IJob<TestForEachJobInput, TestForEachJobResult>
+public sealed class TestForEachJob : IActiveJob<TestForEachJobInput, TestForEachJobResult>
 {
     private int _currentState;
 

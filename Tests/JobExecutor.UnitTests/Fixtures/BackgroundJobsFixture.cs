@@ -9,7 +9,7 @@ namespace JobExecutor.UnitTests.Fixtures;
 public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
     where TIn : class
     where TOut : class
-    where TJob : class, IJob<TIn, TOut>
+    where TJob : class, IActiveJob<TIn, TOut>
 {
     private readonly IHostedService[] _hostedServices;
 

@@ -1,6 +1,6 @@
 # JobExecutor
 
-A .NET library for running background jobs in-process: submit a job, track its state, retry on failure, and query running jobs — all behind two abstractions (`IJob` and `IJobManager`).
+A .NET library for running background jobs in-process: submit a job, track its state, retry on failure, and query running jobs — all behind two abstractions (`IActiveJob` and `IActiveJobManager`).
 
 ## Features
 
@@ -21,7 +21,7 @@ using JobExecutor.BackgroundService;
 using Microsoft.Extensions.DependencyInjection;
 
 // 1. Implement a job (state lives in instance fields).
-public sealed class EmailJob : IJob<EmailJobInput, EmailJobState>
+public sealed class EmailJob : IActiveJob<EmailJobInput, EmailJobState>
 {
     private int _sent;
 
@@ -47,8 +47,8 @@ var services = new ServiceCollection();
 services.AddBackgroundJobs<EmailJobInput, EmailJobState, EmailJob>();
 var provider = services.BuildServiceProvider();
 
-// 3. Start/run/stop/query through IJobManager.
-var manager = provider.GetRequiredService<IJobManager<EmailJobInput, EmailJobState>>();
+// 3. Start/run/stop/query through IActiveJobManager.
+var manager = provider.GetRequiredService<IActiveJobManager<EmailJobInput, EmailJobState>>();
 
 var started = await manager.StartJobAsync(new JobId("job-1"), new EmailJobInput(new[] { "a@x.io" }));
 var done    = await manager.RunJobAsync(new JobId("job-2"), new EmailJobInput(new[] { "b@x.io" }));
@@ -59,10 +59,13 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 
 | Abstraction | Role |
 |---|---|
-| `IJob<TIn, TOut>` | A job: `DoAsync(input, token)` + `GetCurrentState()`. Registered **scoped**. |
-| `IJobManager<TIn, TOut>` | Entry point to start, run, stop, and query jobs. |
+| `IActiveJob<TIn, TOut>` | An active job: `DoAsync(input, token)` + `GetCurrentState()`. Registered **scoped**. |
+| `IActiveJobManager<TIn, TOut>` | Entry point to start, run, stop, and query active jobs. |
 | `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). Each job must use its **own input and output model types** (`TIn`, `TOut`) — reusing either model for another job fails fast. |
-| Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `JobsQueryResult<TOut>`, `JobStateInfo<TOut>`. |
+| Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `ActiveJobsQueryResult<TOut>`, `ActiveJobStateInfo<TOut>`. |
+
+> **You implement `IActiveJob<TIn, TOut>`; the library provides `IActiveJobManager<TIn, TOut>`.**
+> Resolve the manager from DI (`GetRequiredService<...>`) and call it — you never implement it yourself.
 
 ## Projects
 

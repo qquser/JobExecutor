@@ -36,7 +36,7 @@ internal sealed class JobEntryFactory<TIn, TOut>(IOptions<JobRetryOptions> retry
         };
     }
 
-    public JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IJob<TIn, TOut> job)
+    public JobEntry<TIn, TOut> CreateEntry(JobRequest<TIn> request, IActiveJob<TIn, TOut> job)
         => new JobEntry<TIn, TOut>
         {
             Run = request.Run,

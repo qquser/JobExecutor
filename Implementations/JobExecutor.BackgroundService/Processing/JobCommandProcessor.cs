@@ -19,7 +19,7 @@ internal sealed class JobCommandProcessor<TIn, TOut>(
     public async Task ProcessAsync(JobRequest<TIn> request, CancellationToken stoppingToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var job = scope.ServiceProvider.GetRequiredService<IJob<TIn, TOut>>();
+        var job = scope.ServiceProvider.GetRequiredService<IActiveJob<TIn, TOut>>();
         var entry = entryFactory.CreateEntry(request, job);
 
         if (!registry.TryAdd(entry))

@@ -4,7 +4,7 @@ namespace JobExecutor.BackgroundService.Models;
 
 /// <summary>
 /// Immutable data the <see cref="IJobRunner{TIn,TOut}"/> needs to run a job:
-/// the identifier, the input for <see cref="IJob{TIn,TOut}.DoAsync"/>, and the retry policy.
+/// the identifier, the input for <see cref="IActiveJob{TIn,TOut}.DoAsync"/>, and the retry policy.
 /// </summary>
 internal sealed record JobRunModel<TIn>
     where TIn : class

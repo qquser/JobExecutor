@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.UnitTests.Jobs;
 
-public sealed class TestExceptionJob : IJob<TestExceptionJobInput, TestForEachJobResult>
+public sealed class TestExceptionJob : IActiveJob<TestExceptionJobInput, TestForEachJobResult>
 {
     public Task DoAsync(TestExceptionJobInput input, CancellationToken token)
         => throw new Exception("Test exception.");

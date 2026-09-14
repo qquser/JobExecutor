@@ -5,7 +5,7 @@ namespace JobExecutor.BackgroundService.Models;
 /// <summary>
 /// A job that has been submitted but not yet resolved by the engine. It carries the
 /// <see cref="Run"/> data and the <see cref="Signals"/> the caller awaits. The engine maps
-/// it into a <see cref="JobEntry{TIn,TOut}"/> once it resolves the <see cref="IJob{TIn,TOut}"/>
+/// it into a <see cref="JobEntry{TIn,TOut}"/> once it resolves the <see cref="IActiveJob{TIn,TOut}"/>
 /// from a DI scope.
 /// </summary>
 internal sealed record JobRequest<TIn>

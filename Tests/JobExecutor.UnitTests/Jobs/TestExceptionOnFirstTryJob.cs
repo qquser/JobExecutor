@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.UnitTests.Jobs;
 
-public sealed class TestExceptionOnFirstTryJob : IJob<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>
+public sealed class TestExceptionOnFirstTryJob : IActiveJob<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>
 {
     private int _attempts;
 

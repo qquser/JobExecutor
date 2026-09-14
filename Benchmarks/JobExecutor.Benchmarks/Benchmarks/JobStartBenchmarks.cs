@@ -12,7 +12,7 @@ namespace JobExecutor.Benchmarks.Benchmarks;
 public class JobStartBenchmarks
 {
     private readonly ServiceProvider _provider;
-    private readonly IJobManager<NoOpJobInput, NoOpJobResult> _manager;
+    private readonly IActiveJobManager<NoOpJobInput, NoOpJobResult> _manager;
     private readonly NoOpJobInput _input;
 
     public JobStartBenchmarks()
@@ -21,7 +21,7 @@ public class JobStartBenchmarks
         services.AddLogging();
         services.AddBackgroundJobs<NoOpJobInput, NoOpJobResult, NoOpJob>();
         _provider = services.BuildServiceProvider();
-        _manager = _provider.GetRequiredService<IJobManager<NoOpJobInput, NoOpJobResult>>();
+        _manager = _provider.GetRequiredService<IActiveJobManager<NoOpJobInput, NoOpJobResult>>();
         _input = new NoOpJobInput();
 
         foreach (var hostedService in _provider.GetServices<IHostedService>())

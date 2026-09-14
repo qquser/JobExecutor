@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.Benchmarks.Jobs;
 
-public sealed class NoOpJob : IJob<NoOpJobInput, NoOpJobResult>
+public sealed class NoOpJob : IActiveJob<NoOpJobInput, NoOpJobResult>
 {
     public Task DoAsync(NoOpJobInput input, CancellationToken token)
         => Task.CompletedTask;

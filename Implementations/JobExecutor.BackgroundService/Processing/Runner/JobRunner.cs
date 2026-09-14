@@ -11,7 +11,7 @@ internal sealed class JobRunner<TIn, TOut>(ILogger<JobRunner<TIn, TOut>> logger)
     where TIn : class
     where TOut : class
 {
-    public async Task<JobCompletedResult> RunAsync(IJob<TIn, TOut> job, JobRunModel<TIn> run,
+    public async Task<JobCompletedResult> RunAsync(IActiveJob<TIn, TOut> job, JobRunModel<TIn> run,
         CancellationToken token)
     {
         for (var attempt = 0; ; attempt++)

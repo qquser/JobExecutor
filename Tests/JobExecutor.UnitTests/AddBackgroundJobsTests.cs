@@ -75,7 +75,7 @@ public class AddBackgroundJobsTests
 
         using var provider = services.BuildServiceProvider();
 
-        Assert.NotNull(provider.GetService<IJobManager<TestForEachJobInput, TestForEachJobResult>>());
-        Assert.NotNull(provider.GetService<IJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>());
+        Assert.NotNull(provider.GetService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>());
+        Assert.NotNull(provider.GetService<IActiveJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>());
     }
 }

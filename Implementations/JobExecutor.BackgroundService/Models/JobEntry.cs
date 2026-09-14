@@ -14,5 +14,5 @@ internal sealed class JobEntry<TIn, TOut>
 
     public required JobSignals Signals { get; init; }
 
-    public required IJob<TIn, TOut> Job { get; init; }
+    public required IActiveJob<TIn, TOut> Job { get; init; }
 }

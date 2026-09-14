@@ -2,7 +2,7 @@ using JobExecutor.Abstractions.Interfaces;
 
 namespace JobExecutor.UnitTests.Jobs;
 
-public sealed class TestSameInputDifferentOutputJob : IJob<TestForEachJobInput, TestOtherJobResult>
+public sealed class TestSameInputDifferentOutputJob : IActiveJob<TestForEachJobInput, TestOtherJobResult>
 {
     public Task DoAsync(TestForEachJobInput input, CancellationToken token) => Task.CompletedTask;
 

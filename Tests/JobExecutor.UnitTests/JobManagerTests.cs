@@ -13,7 +13,7 @@ public class JobManagerTests
     public void ServiceProvider_ShouldResolveJobManager_WhenJobsRegistered()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
 
         Assert.NotNull(manager);
     }
@@ -22,7 +22,7 @@ public class JobManagerTests
     public void ServiceProvider_ShouldResolveJob_WhenJobsRegistered()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var job = fixture.Provider.GetService<IJob<TestForEachJobInput, TestForEachJobResult>>();
+        var job = fixture.Provider.GetService<IActiveJob<TestForEachJobInput, TestForEachJobResult>>();
 
         Assert.NotNull(job);
     }
@@ -31,7 +31,7 @@ public class JobManagerTests
     public async Task RunJobAsync_ShouldReturnSuccess_WhenJobCompletes()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         var result = await manager.RunJobAsync(jobId, new TestForEachJobInput(1));
@@ -44,7 +44,7 @@ public class JobManagerTests
     {
         using var fixture = new BackgroundJobsFixture<TestExceptionJobInput, TestForEachJobResult, TestExceptionJob>(
             configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestExceptionJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionJobInput(1));
@@ -57,7 +57,7 @@ public class JobManagerTests
     {
         using var fixture = new BackgroundJobsFixture<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult, TestExceptionOnFirstTryJob>(
             configureRetry: r => { r.MaxNrOfRetries = 2; r.MinBackoff = TimeSpan.FromMilliseconds(1); });
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestExceptionOnFirstTryJobInput, TestExceptionOnFirstTryJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         var result = await manager.RunJobAsync(jobId, new TestExceptionOnFirstTryJobInput(1));
@@ -71,7 +71,7 @@ public class JobManagerTests
     public async Task StartJobAsync_ShouldReturnFailure_WhenJobIdIsNullOrWhitespace(string jobId)
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
 
         var result = await manager.StartJobAsync(new JobId(jobId), new TestForEachJobInput(1));
 
@@ -84,7 +84,7 @@ public class JobManagerTests
     public async Task RunJobAsync_ShouldReturnFailure_WhenJobIdIsNullOrWhitespace(string jobId)
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
 
         var result = await manager.RunJobAsync(new JobId(jobId), new TestForEachJobInput(1));
 
@@ -95,7 +95,7 @@ public class JobManagerTests
     public async Task StartJobAsync_ShouldReturnSuccess_WhenJobIsStarted()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         var result = await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
@@ -107,7 +107,7 @@ public class JobManagerTests
     public async Task StopJobAsync_ShouldReturnSuccess_WhenJobIsRunning()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
         await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
 
@@ -120,7 +120,7 @@ public class JobManagerTests
     public async Task GetAllJobsAsync_ShouldReturnEmpty_WhenNoJobsExist()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
 
         var info = await manager.GetAllJobsAsync();
 
@@ -132,7 +132,7 @@ public class JobManagerTests
     public async Task GetAllJobsAsync_ShouldReturnRunningJobState_WhenJobIsStarted()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
         await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
 
@@ -146,7 +146,7 @@ public class JobManagerTests
     public async Task GetJobsPageAsync_ShouldReturnRunningJobState_WhenJobIsStarted()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
         await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
 
@@ -160,7 +160,7 @@ public class JobManagerTests
     public async Task GetJobsByIdsAsync_ShouldReturnRunningJobState_WhenJobIsStarted()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
         await manager.StartJobAsync(jobId, new TestForEachJobInput(100));
 
@@ -174,7 +174,7 @@ public class JobManagerTests
     public async Task StartJobAsync_ShouldStartSingleJob_WhenConcurrentRequestsUseSameJobId()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
         const int requestCount = 10;
 
@@ -190,7 +190,7 @@ public class JobManagerTests
     public async Task GetJobsPageAsync_ShouldReturnJobsInStartOrder_WhenPagingByOne()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobIds = new List<JobId>();
 
         for (var i = 0; i < 3; i++)
@@ -213,7 +213,7 @@ public class JobManagerTests
     public async Task RunJobAsync_ShouldReturnCancelled_WhenJobStoppedByAnotherThread()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>();
-        var manager = fixture.Provider.GetRequiredService<IJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
         // Start a long-running job without awaiting it — it keeps running in the background.
@@ -234,7 +234,7 @@ public class JobManagerTests
     }
 
     private static async Task WaitUntilJobIsRunningAsync(
-        IJobManager<TestForEachJobInput, TestForEachJobResult> manager, JobId jobId)
+        IActiveJobManager<TestForEachJobInput, TestForEachJobResult> manager, JobId jobId)
     {
         for (var i = 0; i < 100; i++)
         {

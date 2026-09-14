@@ -9,19 +9,19 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    public JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, JobEntry<TIn, TOut>>> subset,
+    public ActiveJobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, JobEntry<TIn, TOut>>> subset,
         int totalCount)
     {
         var data = subset.ToDictionary(
             kv => kv.Key,
-            kv => new JobStateInfo<TOut>
+            kv => new ActiveJobStateInfo<TOut>
             {
                 Success = true,
                 ErrorMessage = string.Empty,
                 Result = kv.Value.Job.GetCurrentState(),
             });
 
-        return new JobsQueryResult<TOut>
+        return new ActiveJobsQueryResult<TOut>
         {
             Jobs = data,
             TotalCount = totalCount,

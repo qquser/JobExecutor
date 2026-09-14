@@ -8,5 +8,5 @@ internal interface IJobStateMapper<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    JobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, JobEntry<TIn, TOut>>> subset, int totalCount);
+    ActiveJobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, JobEntry<TIn, TOut>>> subset, int totalCount);
 }
