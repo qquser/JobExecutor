@@ -7,5 +7,7 @@ internal interface IJobEntryFactory<TIn, TOut>
     where TIn : class
     where TOut : class
 {
-    JobRequest<TIn> CreateRequest(JobId jobId, TIn input, bool isStartCommand);
+    StartJobRequest<TIn> CreateStartRequest(JobId jobId, TIn input);
+
+    RunJobRequest<TIn> CreateRunRequest(JobId jobId, TIn input);
 }

@@ -15,7 +15,7 @@ internal sealed class JobRegistry<TIn, TOut>(IJobStateMapper<TIn, TOut> stateMap
 
     public bool Contains(JobId jobId) => _jobs.ContainsKey(jobId);
 
-    public void Add(JobId jobId, RegisteredJob<TIn, TOut> job)
+    public bool TryAdd(JobId jobId, RegisteredJob<TIn, TOut> job)
         => _jobs.TryAdd(jobId, job);
 
     public bool TryGet(JobId jobId, out RegisteredJob<TIn, TOut> job) => _jobs.TryGetValue(jobId, out job!);

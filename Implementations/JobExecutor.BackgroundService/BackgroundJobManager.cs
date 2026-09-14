@@ -11,7 +11,8 @@ using Microsoft.Extensions.Options;
 namespace JobExecutor.BackgroundService;
 
 internal sealed class BackgroundJobManager<TIn, TOut>(
-                        Channel<JobRequest<TIn>> channel,
+                        Channel<StartJobRequest<TIn>> startChannel,
+                        Channel<RunJobRequest<TIn>> runChannel,
                         IJobEntryFactory<TIn, TOut> entryFactory,
                         IJobRegistry<TIn, TOut> registry,
                         ILogger<BackgroundJobManager<TIn, TOut>> logger,
@@ -27,16 +28,16 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         if (string.IsNullOrWhiteSpace(jobId.Value))
             return new JobStartedResult(false, "Job id is required.");
 
-        var request = entryFactory.CreateRequest(jobId, input, isStartCommand: true);
-        await channel.Writer.WriteAsync(request);
+        var request = entryFactory.CreateStartRequest(jobId, input);
+        await startChannel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Started.Task.WaitAsync(timeoutOptions.Value.Timeout);
+            return await request.Started.Task.WaitAsync(timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {
-            await request.Signals.Cts.CancelAsync();
+            await request.Cts.CancelAsync();
             logger.LogWarning("Job {JobId} did not start within the timeout.", request.JobId.Value);
             return new JobStartedResult(false, "Timeout.");
         }
@@ -47,16 +48,16 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         if (string.IsNullOrWhiteSpace(jobId.Value))
             return new JobCompletedResult(false, "Job id is required.");
 
-        var request = entryFactory.CreateRequest(jobId, input, isStartCommand: false);
-        await channel.Writer.WriteAsync(request);
+        var request = entryFactory.CreateRunRequest(jobId, input);
+        await runChannel.Writer.WriteAsync(request);
 
         try
         {
-            return await request.Signals.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout);
+            return await request.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout);
         }
         catch (TimeoutException)
         {
-            await request.Signals.Cts.CancelAsync();
+            await request.Cts.CancelAsync();
             logger.LogWarning("Job {JobId} did not complete within the timeout.", request.JobId.Value);
             return new JobCompletedResult(false, "Timeout.");
         }

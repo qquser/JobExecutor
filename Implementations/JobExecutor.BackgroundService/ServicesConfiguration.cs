@@ -26,7 +26,7 @@ public static class ServicesConfiguration
                 "Each background job class must be registered only once.");
         }
 
-        if (services.Any(descriptor => descriptor.ServiceType == typeof(Channel<JobRequest<TIn>>)))
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(Channel<StartJobRequest<TIn>>)))
         {
             throw new InvalidOperationException(
                 $"A background job with input type {typeof(TIn).Name} is already registered. " +
@@ -50,13 +50,16 @@ public static class ServicesConfiguration
             services.Configure<JobTimeoutOptions>(configureTimeout);
 
         services.AddScoped(typeof(IActiveJob<TIn, TOut>), typeof(TJob));
-        services.AddSingleton(_ => Channel.CreateUnbounded<JobRequest<TIn>>());
+        services.AddSingleton(_ => Channel.CreateUnbounded<StartJobRequest<TIn>>());
+        services.AddSingleton(_ => Channel.CreateUnbounded<RunJobRequest<TIn>>());
         services.AddSingleton<IJobRegistry<TIn, TOut>, JobRegistry<TIn, TOut>>();
         services.AddSingleton<IJobEntryFactory<TIn, TOut>, JobEntryFactory<TIn, TOut>>();
         services.AddSingleton<IJobStateMapper<TIn, TOut>, JobStateMapper<TIn, TOut>>();
-        services.AddSingleton<IJobCommandProcessor<TIn, TOut>, JobCommandProcessor<TIn, TOut>>();
+        services.AddSingleton<IStartJobCommandProcessor<TIn, TOut>, StartJobCommandProcessor<TIn, TOut>>();
+        services.AddSingleton<IRunJobCommandProcessor<TIn, TOut>, RunJobCommandProcessor<TIn, TOut>>();
         services.AddSingleton<IActiveJobManager<TIn, TOut>, BackgroundJobManager<TIn, TOut>>();
-        services.AddHostedService<JobEngine<TIn, TOut>>();
+        services.AddHostedService<StartJobEngine<TIn, TOut>>();
+        services.AddHostedService<RunJobEngine<TIn, TOut>>();
         return services;
     }
 }

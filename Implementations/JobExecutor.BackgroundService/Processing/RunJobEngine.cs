@@ -4,12 +4,12 @@ using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService.Processing;
 
-internal sealed class JobEngine<TIn, TOut>(
-                                            Channel<JobRequest<TIn>> channel,
-                                            IJobCommandProcessor<TIn, TOut> commandProcessor)
-        : Microsoft.Extensions.Hosting.BackgroundService
-            where TIn : class
-            where TOut : class
+internal sealed class RunJobEngine<TIn, TOut>(
+    Channel<RunJobRequest<TIn>> channel,
+    IRunJobCommandProcessor<TIn, TOut> commandProcessor)
+    : Microsoft.Extensions.Hosting.BackgroundService
+        where TIn : class
+        where TOut : class
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

@@ -10,7 +10,7 @@ internal interface IJobRegistry<TIn, TOut>
 {
     bool Contains(JobId jobId);
 
-    void Add(JobId jobId, RegisteredJob<TIn, TOut> job);
+    bool TryAdd(JobId jobId, RegisteredJob<TIn, TOut> job);
 
     bool TryGet(JobId jobId, out RegisteredJob<TIn, TOut> job);
 

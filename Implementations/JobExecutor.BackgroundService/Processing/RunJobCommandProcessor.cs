@@ -7,39 +7,35 @@ using Microsoft.Extensions.Logging;
 
 namespace JobExecutor.BackgroundService.Processing;
 
-internal sealed class JobCommandProcessor<TIn, TOut>(
+internal sealed class RunJobCommandProcessor<TIn, TOut>(
     IServiceScopeFactory scopeFactory,
     IJobRegistry<TIn, TOut> registry,
-    ILogger<JobCommandProcessor<TIn, TOut>> logger)
-    : IJobCommandProcessor<TIn, TOut>
+    ILogger<RunJobCommandProcessor<TIn, TOut>> logger)
+    : IRunJobCommandProcessor<TIn, TOut>
         where TIn : class
         where TOut : class
 {
-    public async Task ProcessAsync(JobRequest<TIn> request, CancellationToken stoppingToken)
+    public async Task ProcessAsync(RunJobRequest<TIn> request, CancellationToken stoppingToken)
     {
         if (registry.Contains(request.JobId))
         {
-            var message = $"{request.JobId.Value} job exists.";
-            if (request.Signals.IsStartCommand)
-                request.Signals.Started.TrySetResult(new JobStartedResult(false, message));
-            else
-                request.Signals.Completed.TrySetResult(new JobCompletedResult(false, message));
-
+            request.Completed.TrySetResult(new JobCompletedResult(false, $"{request.JobId.Value} job exists."));
             return;
         }
 
-        if (request.Signals.Cts.IsCancellationRequested)
+        if (request.Cts.IsCancellationRequested)
             return;
 
         using var scope = scopeFactory.CreateScope();
         var job = scope.ServiceProvider.GetRequiredService<IActiveJob<TIn, TOut>>();
 
-        registry.Add(request.JobId, new RegisteredJob<TIn, TOut>(job, request.Signals.Cts));
+        if (!registry.TryAdd(request.JobId, new RegisteredJob<TIn, TOut>(job, request.Cts)))
+        {
+            request.Completed.TrySetResult(new JobCompletedResult(false, $"{request.JobId.Value} job exists."));
+            return;
+        }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Signals.Cts.Token, stoppingToken);
-
-        if (request.Signals.IsStartCommand)
-            request.Signals.Started.TrySetResult(new JobStartedResult(true, string.Empty));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, stoppingToken);
 
         JobCompletedResult result;
         try
@@ -59,8 +55,7 @@ internal sealed class JobCommandProcessor<TIn, TOut>(
             result = new JobCompletedResult(false, ex.Message);
         }
 
-        if (!request.Signals.IsStartCommand)
-            request.Signals.Completed.TrySetResult(result);
+        request.Completed.TrySetResult(result);
 
         registry.TryRemove(request.JobId, out _);
     }
