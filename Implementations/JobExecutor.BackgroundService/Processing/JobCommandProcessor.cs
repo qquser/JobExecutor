@@ -28,6 +28,9 @@ internal sealed class JobCommandProcessor<TIn, TOut>(
             return;
         }
 
+        if (request.Signals.Cts.IsCancellationRequested)
+            return;
+
         using var scope = scopeFactory.CreateScope();
         var job = scope.ServiceProvider.GetRequiredService<IActiveJob<TIn, TOut>>();
 

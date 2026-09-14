@@ -215,12 +215,100 @@ public class JobManagerTests
         Assert.Equal("cancelled", result.Result);
     }
 
+    [Fact]
+    public async Task RunJobAsync_ShouldCancelRunningJob_WhenTimedOut()
+    {
+        using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(
+            o => o.Timeout = TimeSpan.FromMilliseconds(50));
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var jobId = new JobId(Guid.NewGuid().ToString());
+
+        var result = await manager.RunJobAsync(jobId, new TestForEachJobInput(int.MaxValue));
+
+        Assert.False(result.Success);
+        Assert.Equal("Timeout.", result.Result);
+
+        // The timed-out job must not keep running in the background — it is cancelled and removed.
+        await WaitUntilJobRemovedAsync(manager, jobId);
+        Assert.False((await manager.GetAllJobsAsync()).Jobs.ContainsKey(jobId));
+    }
+
+    [Fact]
+    public async Task RunJobAsync_ShouldStartJobBeforeTimingOut_WhenExecutionExceedsTimeout()
+    {
+        using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(
+            o => o.Timeout = TimeSpan.FromMilliseconds(100));
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
+        var jobId = new JobId(Guid.NewGuid().ToString());
+
+        var runTask = manager.RunJobAsync(jobId, new TestForEachJobInput(int.MaxValue));
+
+        // The job is started (registered) before the timeout — the timeout waits for completion, not start.
+        await WaitUntilJobIsRunningAsync(manager, jobId);
+        Assert.True((await manager.GetAllJobsAsync()).Jobs.ContainsKey(jobId));
+
+        var result = await runTask;
+
+        Assert.False(result.Success);
+        Assert.Equal("Timeout.", result.Result);
+    }
+
+    [Fact]
+    public async Task StartJobAsync_ShouldNotStartJob_WhenTimedOut()
+    {
+        using var fixture = new BackgroundJobsFixture<TestBlockingJobInput, TestBlockingJobResult, TestBlockingJob>(
+            o => o.Timeout = TimeSpan.FromMilliseconds(50));
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult>>();
+        var blockerJobId = new JobId(Guid.NewGuid().ToString());
+        var timedOutJobId = new JobId(Guid.NewGuid().ToString());
+
+        // Block the engine with a first job so the second request cannot be dequeued.
+        var startResult = await manager.StartJobAsync(blockerJobId, new TestBlockingJobInput());
+        Assert.True(startResult.Success);
+
+        // The second request times out while the engine is blocked, so its cancellation is triggered.
+        var result = await manager.StartJobAsync(timedOutJobId, new TestBlockingJobInput());
+
+        Assert.False(result.Success);
+        Assert.Equal("Timeout.", result.Result);
+
+        // Unblock the engine. The cancelled request must then be skipped, not started in the background.
+        await manager.StopJobAsync(blockerJobId);
+        await WaitUntilJobsEmptyAsync(manager);
+
+        Assert.Equal(0, (await manager.GetAllJobsAsync()).TotalCount);
+    }
+
     private static async Task WaitUntilJobIsRunningAsync(
         IActiveJobManager<TestForEachJobInput, TestForEachJobResult> manager, JobId jobId)
     {
         for (var i = 0; i < 100; i++)
         {
             if ((await manager.GetAllJobsAsync()).Jobs.ContainsKey(jobId))
+                return;
+
+            await Task.Delay(10);
+        }
+    }
+
+    private static async Task WaitUntilJobRemovedAsync(
+        IActiveJobManager<TestForEachJobInput, TestForEachJobResult> manager, JobId jobId)
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            if (!(await manager.GetAllJobsAsync()).Jobs.ContainsKey(jobId))
+                return;
+
+            await Task.Delay(10);
+        }
+    }
+
+    private static async Task WaitUntilJobsEmptyAsync(
+        IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult> manager)
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            if ((await manager.GetAllJobsAsync()).TotalCount == 0)
                 return;
 
             await Task.Delay(10);

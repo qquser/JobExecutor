@@ -14,7 +14,6 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
                         Channel<JobRequest<TIn>> channel,
                         IJobEntryFactory<TIn, TOut> entryFactory,
                         IJobRegistry<TIn, TOut> registry,
-                        IJobStateMapper<TIn, TOut> stateMapper,
                         ILogger<BackgroundJobManager<TIn, TOut>> logger,
                         IOptions<JobTimeoutOptions> timeoutOptions)
 
@@ -37,6 +36,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
+            await request.Signals.Cts.CancelAsync();
             logger.LogWarning("Job {JobId} did not start within the timeout.", request.JobId.Value);
             return new JobStartedResult(false, "Timeout.");
         }
@@ -56,6 +56,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
         catch (TimeoutException)
         {
+            await request.Signals.Cts.CancelAsync();
             logger.LogWarning("Job {JobId} did not complete within the timeout.", request.JobId.Value);
             return new JobCompletedResult(false, "Timeout.");
         }
@@ -73,11 +74,11 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
     }
 
     public Task<ActiveJobsQueryResult<TOut>> GetAllJobsAsync()
-        => Task.FromResult(stateMapper.Map(registry.GetAll(), registry.Count));
+        => Task.FromResult(registry.GetAll());
 
     public Task<ActiveJobsQueryResult<TOut>> GetJobsPageAsync(int skip, int take)
-        => Task.FromResult(stateMapper.Map(registry.GetPage(skip, take), registry.Count));
+        => Task.FromResult(registry.GetPage(skip, take));
 
     public Task<ActiveJobsQueryResult<TOut>> GetJobsByIdsAsync(ICollection<JobId> jobIds)
-        => Task.FromResult(stateMapper.Map(registry.GetByIds(jobIds), registry.Count));
+        => Task.FromResult(registry.GetByIds(jobIds));
 }

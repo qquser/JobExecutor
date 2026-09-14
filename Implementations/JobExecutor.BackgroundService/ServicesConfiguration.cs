@@ -5,6 +5,7 @@ using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using JobExecutor.BackgroundService.Processing;
 using JobExecutor.BackgroundService.Registry;
+using JobExecutor.BackgroundService.Registry.Mapper;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JobExecutor.BackgroundService;

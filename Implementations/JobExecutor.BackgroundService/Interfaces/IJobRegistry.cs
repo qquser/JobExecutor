@@ -1,5 +1,5 @@
-using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService.Interfaces;
@@ -16,11 +16,9 @@ internal interface IJobRegistry<TIn, TOut>
 
     bool TryRemove(JobId jobId, out RegisteredJob<TIn, TOut> job);
 
-    int Count { get; }
+    ActiveJobsQueryResult<TOut> GetAll();
 
-    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetAll();
+    ActiveJobsQueryResult<TOut> GetPage(int skip, int take);
 
-    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetPage(int skip, int take);
-
-    IReadOnlyCollection<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> GetByIds(ICollection<JobId> jobIds);
+    ActiveJobsQueryResult<TOut> GetByIds(ICollection<JobId> jobIds);
 }

@@ -3,7 +3,7 @@ using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Interfaces;
 
-namespace JobExecutor.BackgroundService.Registry;
+namespace JobExecutor.BackgroundService.Registry.Mapper;
 
 internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     where TIn : class
