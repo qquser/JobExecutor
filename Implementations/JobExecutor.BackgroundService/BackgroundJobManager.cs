@@ -13,7 +13,7 @@ namespace JobExecutor.BackgroundService;
 internal sealed class BackgroundJobManager<TIn, TOut>(
                         Channel<StartJobRequest<TIn>> startChannel,
                         Channel<RunJobRequest<TIn>> runChannel,
-                        IJobEntryFactory<TIn, TOut> entryFactory,
+                        IJobEntryFactory<TIn> entryFactory,
                         IJobRegistry<TIn, TOut> registry,
                         ILogger<BackgroundJobManager<TIn, TOut>> logger,
                         IOptions<JobTimeoutOptions> timeoutOptions)
@@ -63,15 +63,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
     }
 
-    public Task<JobStoppedResult> StopJobAsync(JobId jobId)
+    public async Task<JobStoppedResult> StopJobAsync(JobId jobId)
     {
         if (registry.TryGet(jobId, out var registered))
         {
-            registered.Cts.Cancel();
-            return Task.FromResult(new JobStoppedResult(true, string.Empty));
+            await registered.Cts.CancelAsync();
+            return new JobStoppedResult(true, string.Empty);
         }
 
-        return Task.FromResult(new JobStoppedResult(false, $"Job list does not contain {jobId.Value}"));
+        return new JobStoppedResult(false, $"Job list does not contain {jobId.Value}");
     }
 
     public Task<ActiveJobsQueryResult<TOut>> GetAllJobsAsync()

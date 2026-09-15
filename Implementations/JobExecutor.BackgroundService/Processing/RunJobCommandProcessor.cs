@@ -27,7 +27,18 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
 
         using var scope = scopeFactory.CreateScope();
-        var job = scope.ServiceProvider.GetRequiredService<IActiveJob<TIn, TOut>>();
+
+        IActiveJob<TIn, TOut> job;
+        try
+        {
+            job = scope.ServiceProvider.GetRequiredService<IActiveJob<TIn, TOut>>();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Job {JobId} could not be created.", request.JobId.Value);
+            request.Completed.TrySetResult(new JobCompletedResult(false, ex.Message));
+            return;
+        }
 
         if (!registry.TryAdd(request.JobId, new RegisteredJob<TIn, TOut>(job, request.Cts)))
         {

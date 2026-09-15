@@ -53,7 +53,7 @@ public static class ServicesConfiguration
         services.AddSingleton(_ => Channel.CreateUnbounded<StartJobRequest<TIn>>());
         services.AddSingleton(_ => Channel.CreateUnbounded<RunJobRequest<TIn>>());
         services.AddSingleton<IJobRegistry<TIn, TOut>, JobRegistry<TIn, TOut>>();
-        services.AddSingleton<IJobEntryFactory<TIn, TOut>, JobEntryFactory<TIn, TOut>>();
+        services.AddSingleton<IJobEntryFactory<TIn>, JobEntryFactory<TIn>>();
         services.AddSingleton<IJobStateMapper<TIn, TOut>, JobStateMapper<TIn, TOut>>();
         services.AddSingleton<IStartJobCommandProcessor<TIn, TOut>, StartJobCommandProcessor<TIn, TOut>>();
         services.AddSingleton<IRunJobCommandProcessor<TIn, TOut>, RunJobCommandProcessor<TIn, TOut>>();

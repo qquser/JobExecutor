@@ -4,9 +4,8 @@ using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService.Registry;
 
-internal sealed class JobEntryFactory<TIn, TOut> : IJobEntryFactory<TIn, TOut>
+internal sealed class JobEntryFactory<TIn> : IJobEntryFactory<TIn>
     where TIn : class
-    where TOut : class
 {
     public StartJobRequest<TIn> CreateStartRequest(JobId jobId, TIn input)
     {

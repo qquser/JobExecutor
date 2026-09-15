@@ -4,6 +4,7 @@ using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace JobExecutor.BackgroundService.Registry;
 
@@ -37,6 +38,9 @@ internal sealed class JobRegistry<TIn, TOut>(IJobStateMapper<TIn, TOut> stateMap
 
     public ActiveJobsQueryResult<TOut> GetByIds(ICollection<JobId> jobIds)
     {
+        if (jobIds is null || jobIds.Count == 0)
+            return stateMapper.Map(Array.Empty<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(), _jobs.Count);
+
         var jobs = new List<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(jobIds.Count);
         foreach (var jobId in jobIds)
         {

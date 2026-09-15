@@ -3,9 +3,8 @@ using JobExecutor.BackgroundService.Models;
 
 namespace JobExecutor.BackgroundService.Interfaces;
 
-internal interface IJobEntryFactory<TIn, TOut>
+internal interface IJobEntryFactory<TIn>
     where TIn : class
-    where TOut : class
 {
     StartJobRequest<TIn> CreateStartRequest(JobId jobId, TIn input);
 
