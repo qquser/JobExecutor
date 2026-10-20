@@ -46,6 +46,9 @@ The library returns results instead of throwing exceptions, so the responses loo
 `success: false` is returned with `400 Bad Request` (a duplicate job id, a failed job) or
 `404 Not Found` (stopping a job that is not running).
 
+The endpoints pass `HttpContext.RequestAborted` to the manager, so a job is cancelled when the
+client disconnects.
+
 The query endpoints return the states of the jobs:
 
 ```json

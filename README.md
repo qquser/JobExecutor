@@ -66,6 +66,31 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 > **You implement `IActiveJob<TIn, TOut>`; the library provides `IActiveJobManager<TIn, TOut>`.**
 > Resolve the manager from DI (`GetRequiredService<...>`) and call it — you never implement it yourself.
 
+## Nested jobs
+
+A job can call another job through the manager of the other job. Pass the token of the calling job,
+so the nested job is stopped together with its caller:
+
+```csharp
+public sealed class ReportJob(IActiveJobManager<EmailJobInput, EmailJobState> emails) : IActiveJob<ReportInput, ReportState>
+{
+    public async Task DoAsync(ReportInput input, CancellationToken token)
+    {
+        // The token is propagated: stopping ReportJob stops EmailJob too.
+        var result = await emails.StartJobAsync(new JobId(input.EmailJobId), input.Email, token);
+
+        if (!result.Success)
+            throw new InvalidOperationException(result.Result);
+    }
+
+    public ReportState GetCurrentState() => new(0);
+}
+```
+
+Without the token the nested job is independent: it keeps running when the caller is stopped or
+times out. The failure of the nested job is returned in its result — the caller decides what to do
+with it.
+
 ## Projects
 
 ```

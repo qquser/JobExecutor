@@ -26,7 +26,7 @@ public abstract class ActiveJobsController<TIn, TOut>(IActiveJobManager<TIn, TOu
     [ProducesResponseType(typeof(JobStartedResult), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<JobStartedResult>> StartAsync(string jobId, [FromBody] TIn input)
     {
-        var result = await manager.StartJobAsync(new JobId(jobId), input);
+        var result = await manager.StartJobAsync(new JobId(jobId), input, HttpContext.RequestAborted);
 
         return result.Success ? Ok(result) : BadRequest(result);
     }
@@ -39,7 +39,7 @@ public abstract class ActiveJobsController<TIn, TOut>(IActiveJobManager<TIn, TOu
     [ProducesResponseType(typeof(JobCompletedResult), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<JobCompletedResult>> RunAsync(string jobId, [FromBody] TIn input)
     {
-        var result = await manager.RunJobAsync(new JobId(jobId), input);
+        var result = await manager.RunJobAsync(new JobId(jobId), input, HttpContext.RequestAborted);
 
         return result.Success ? Ok(result) : BadRequest(result);
     }

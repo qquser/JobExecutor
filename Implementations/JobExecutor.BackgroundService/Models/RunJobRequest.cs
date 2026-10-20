@@ -15,5 +15,10 @@ internal sealed record RunJobRequest<TIn>
 
     public required CancellationTokenSource Cts { get; init; }
 
+    /// <summary>
+    /// The token of the caller. The job is cancelled when it is cancelled.
+    /// </summary>
+    public CancellationToken Token { get; init; }
+
     public required TaskCompletionSource<JobCompletedResult> Completed { get; init; }
 }

@@ -23,8 +23,11 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        if (request.Cts.IsCancellationRequested)
+        if (request.Cts.IsCancellationRequested || request.Token.IsCancellationRequested)
+        {
+            request.Started.TrySetResult(new JobStartedResult(false, "cancelled"));
             return;
+        }
 
         using var scope = scopeFactory.CreateScope();
 
@@ -46,7 +49,7 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, stoppingToken);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, request.Token, stoppingToken);
 
         request.Started.TrySetResult(new JobStartedResult(true, string.Empty));
 

@@ -23,12 +23,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         where TIn : class
         where TOut : class
 {
-    public async Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input)
+    public async Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(jobId.Value))
             return new JobStartedResult(false, "Job id is required.");
 
-        var request = entryFactory.CreateStartRequest(jobId, input);
+        if (token.IsCancellationRequested)
+            return new JobStartedResult(false, "cancelled");
+
+        var request = entryFactory.CreateStartRequest(jobId, input, token);
         await startChannel.Writer.WriteAsync(request);
 
         try
@@ -43,12 +46,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         }
     }
 
-    public async Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input)
+    public async Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(jobId.Value))
             return new JobCompletedResult(false, "Job id is required.");
 
-        var request = entryFactory.CreateRunRequest(jobId, input);
+        if (token.IsCancellationRequested)
+            return new JobCompletedResult(false, "cancelled");
+
+        var request = entryFactory.CreateRunRequest(jobId, input, token);
         await runChannel.Writer.WriteAsync(request);
 
         try

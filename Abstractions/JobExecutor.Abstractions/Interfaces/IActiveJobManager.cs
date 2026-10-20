@@ -19,8 +19,11 @@ public interface IActiveJobManager<in TIn, TOut>
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
+    /// <param name="token">Cancels the job itself when it is cancelled. The call is not interrupted by it:
+    /// the result of the cancelled job is returned as a result, not as an exception. Pass the token of
+    /// the calling job to stop the nested jobs together with the caller.</param>
     /// <returns>The result of starting the background job.</returns>
-    Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input);
+    Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input, CancellationToken token = default);
 
     /// <summary>
     /// Runs a background job and waits for it to complete. If IActiveJob.DoAsync throws, the error is
@@ -28,8 +31,11 @@ public interface IActiveJobManager<in TIn, TOut>
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
+    /// <param name="token">Cancels the job itself when it is cancelled. The call is not interrupted by it:
+    /// the result of the cancelled job is returned as a result, not as an exception. Pass the token of
+    /// the calling job to stop the nested jobs together with the caller.</param>
     /// <returns>The result of running the background job.</returns>
-    Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input);
+    Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input, CancellationToken token = default);
 
     /// <summary>
     /// Stops a background job.

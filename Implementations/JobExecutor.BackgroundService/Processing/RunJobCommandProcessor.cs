@@ -23,8 +23,11 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        if (request.Cts.IsCancellationRequested)
+        if (request.Cts.IsCancellationRequested || request.Token.IsCancellationRequested)
+        {
+            request.Completed.TrySetResult(new JobCompletedResult(false, "cancelled"));
             return;
+        }
 
         using var scope = scopeFactory.CreateScope();
 
@@ -46,7 +49,7 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, stoppingToken);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, request.Token, stoppingToken);
 
         JobCompletedResult result;
         try
