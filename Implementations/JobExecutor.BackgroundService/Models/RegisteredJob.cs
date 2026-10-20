@@ -6,6 +6,6 @@ namespace JobExecutor.BackgroundService.Models;
 /// A job registered as active: the resolved <see cref="IActiveJob{TIn,TOut}"/> instance used to read
 /// its current state, and the per-job <see cref="CancellationTokenSource"/> used to stop it.
 /// </summary>
-internal sealed record RegisteredJob<TIn, TOut>(IActiveJob<TIn, TOut> Job, CancellationTokenSource Cts)
+internal sealed record RegisteredJob<TIn, TOut>(IActiveJob<TIn, TOut> Job, CancellationTokenSource StopSource)
     where TIn : class
     where TOut : class;

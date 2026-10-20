@@ -13,12 +13,17 @@ internal sealed record StartJobRequest<TIn>
 
     public required TIn Input { get; init; }
 
-    public required CancellationTokenSource Cts { get; init; }
+    /// <summary>
+    /// The source that stops the job from the outside: <c>StopJobAsync</c> and the timeout of the
+    /// manager cancel it. The job is linked to it together with <see cref="CallerToken"/>.
+    /// </summary>
+    public required CancellationTokenSource StopSource { get; init; }
 
     /// <summary>
-    /// The token of the caller. The job is cancelled when it is cancelled.
+    /// The token of the caller, the one that was passed to <c>StartJobAsync</c>. The job is cancelled
+    /// when it is cancelled.
     /// </summary>
-    public CancellationToken Token { get; init; }
+    public CancellationToken CallerToken { get; init; }
 
     public required TaskCompletionSource<JobStartedResult> Started { get; init; }
 }

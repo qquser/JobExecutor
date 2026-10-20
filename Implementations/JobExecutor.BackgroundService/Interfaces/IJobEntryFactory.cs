@@ -6,7 +6,7 @@ namespace JobExecutor.BackgroundService.Interfaces;
 internal interface IJobEntryFactory<TIn>
     where TIn : class
 {
-    StartJobRequest<TIn> CreateStartRequest(JobId jobId, TIn input, CancellationToken token = default);
+    StartJobRequest<TIn> CreateStartRequest(JobId jobId, TIn input, CancellationToken callerToken = default);
 
-    RunJobRequest<TIn> CreateRunRequest(JobId jobId, TIn input, CancellationToken token = default);
+    RunJobRequest<TIn> CreateRunRequest(JobId jobId, TIn input, CancellationToken callerToken = default);
 }

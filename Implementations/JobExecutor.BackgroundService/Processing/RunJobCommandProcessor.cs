@@ -23,7 +23,7 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        if (request.Cts.IsCancellationRequested || request.Token.IsCancellationRequested)
+        if (request.StopSource.IsCancellationRequested || request.CallerToken.IsCancellationRequested)
         {
             request.Completed.TrySetResult(new JobCompletedResult(false, "cancelled"));
             return;
@@ -43,13 +43,18 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        if (!registry.TryAdd(request.JobId, new RegisteredJob<TIn, TOut>(job, request.Cts)))
+        if (!registry.TryAdd(request.JobId, new RegisteredJob<TIn, TOut>(job, request.StopSource)))
         {
             request.Completed.TrySetResult(new JobCompletedResult(false, $"{request.JobId.Value} job exists."));
             return;
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(request.Cts.Token, request.Token, stoppingToken);
+        // The job is cancelled by the stop source (StopJobAsync, the timeout of the manager),
+        // by the token of the caller or by the shutdown of the host.
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            request.StopSource.Token,
+            request.CallerToken,
+            stoppingToken);
 
         JobCompletedResult result;
         try

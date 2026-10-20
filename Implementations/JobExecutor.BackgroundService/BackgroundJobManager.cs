@@ -32,15 +32,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
             return new JobStartedResult(false, "cancelled");
 
         var request = entryFactory.CreateStartRequest(jobId, input, token);
-        await startChannel.Writer.WriteAsync(request);
+        await startChannel.Writer.WriteAsync(request, token);
 
         try
         {
-            return await request.Started.Task.WaitAsync(timeoutOptions.Value.Timeout);
+            return await request.Started.Task.WaitAsync(timeoutOptions.Value.Timeout, token);
         }
         catch (TimeoutException)
         {
-            await request.Cts.CancelAsync();
+            await request.StopSource.CancelAsync();
             logger.LogWarning("Job {JobId} did not start within the timeout.", request.JobId.Value);
             return new JobStartedResult(false, "Timeout.");
         }
@@ -55,15 +55,15 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
             return new JobCompletedResult(false, "cancelled");
 
         var request = entryFactory.CreateRunRequest(jobId, input, token);
-        await runChannel.Writer.WriteAsync(request);
+        await runChannel.Writer.WriteAsync(request, token);
 
         try
         {
-            return await request.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout);
+            return await request.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout, token);
         }
         catch (TimeoutException)
         {
-            await request.Cts.CancelAsync();
+            await request.StopSource.CancelAsync();
             logger.LogWarning("Job {JobId} did not complete within the timeout.", request.JobId.Value);
             return new JobCompletedResult(false, "Timeout.");
         }
@@ -73,7 +73,7 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
     {
         if (registry.TryGet(jobId, out var registered))
         {
-            await registered.Cts.CancelAsync();
+            await registered.StopSource.CancelAsync();
             return new JobStoppedResult(true, string.Empty);
         }
 

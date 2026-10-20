@@ -89,7 +89,8 @@ public sealed class ReportJob(IActiveJobManager<EmailJobInput, EmailJobState> em
 
 Without the token the nested job is independent: it keeps running when the caller is stopped or
 times out. The failure of the nested job is returned in its result — the caller decides what to do
-with it.
+with it. The token also interrupts the wait of the nested call, so the whole chain unwinds when the
+outermost job is cancelled.
 
 ## Projects
 

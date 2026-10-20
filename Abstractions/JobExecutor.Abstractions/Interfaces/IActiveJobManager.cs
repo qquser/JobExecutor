@@ -19,9 +19,9 @@ public interface IActiveJobManager<in TIn, TOut>
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
-    /// <param name="token">Cancels the job itself when it is cancelled. The call is not interrupted by it:
-    /// the result of the cancelled job is returned as a result, not as an exception. Pass the token of
-    /// the calling job to stop the nested jobs together with the caller.</param>
+    /// <param name="token">Cancels the job itself when it is cancelled. The call returns as soon as
+    /// the job is started, so the token only matters before that. Pass the token of the calling job
+    /// to stop the nested jobs together with the caller.</param>
     /// <returns>The result of starting the background job.</returns>
     Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input, CancellationToken token = default);
 
@@ -31,9 +31,10 @@ public interface IActiveJobManager<in TIn, TOut>
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
-    /// <param name="token">Cancels the job itself when it is cancelled. The call is not interrupted by it:
-    /// the result of the cancelled job is returned as a result, not as an exception. Pass the token of
-    /// the calling job to stop the nested jobs together with the caller.</param>
+    /// <param name="token">Cancels the job itself when it is cancelled, and interrupts the wait of the
+    /// caller: when the token is cancelled, the job is cancelled and the call throws
+    /// <see cref="OperationCanceledException"/>. Pass the token of the calling job to stop the nested
+    /// jobs together with the caller.</param>
     /// <returns>The result of running the background job.</returns>
     Task<JobCompletedResult> RunJobAsync(JobId jobId, TIn input, CancellationToken token = default);
 
