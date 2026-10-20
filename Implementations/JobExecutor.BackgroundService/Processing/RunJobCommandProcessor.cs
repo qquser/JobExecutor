@@ -15,7 +15,7 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
         where TIn : class
         where TOut : class
 {
-    public async Task ProcessAsync(RunJobRequest<TIn> request, CancellationToken stoppingToken)
+    public async Task ProcessAsync(RunJobRequest<TIn> request, CancellationToken hostStoppingToken)
     {
         if (registry.Contains(request.JobId))
         {
@@ -54,7 +54,7 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             request.StopSource.Token,
             request.CallerToken,
-            stoppingToken);
+            hostStoppingToken);
 
         JobCompletedResult result;
         try

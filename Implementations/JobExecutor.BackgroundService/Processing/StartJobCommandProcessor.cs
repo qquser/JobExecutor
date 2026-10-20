@@ -15,7 +15,7 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
         where TIn : class
         where TOut : class
 {
-    public async Task ProcessAsync(StartJobRequest<TIn> request, CancellationToken stoppingToken)
+    public async Task ProcessAsync(StartJobRequest<TIn> request, CancellationToken hostStoppingToken)
     {
         if (registry.Contains(request.JobId))
         {
@@ -54,7 +54,7 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             request.StopSource.Token,
             request.CallerToken,
-            stoppingToken);
+            hostStoppingToken);
 
         request.Started.TrySetResult(new JobStartedResult(true, string.Empty));
 
@@ -65,6 +65,7 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
         catch (OperationCanceledException) when (linked.Token.IsCancellationRequested)
         {
             // The job was stopped; a start command has no completion signal to set.
+            logger.LogInformation("Job {JobId} was cancelled.", request.JobId.Value);
         }
         catch (Exception ex)
         {
