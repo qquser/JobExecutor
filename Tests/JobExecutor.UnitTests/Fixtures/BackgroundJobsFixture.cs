@@ -18,8 +18,10 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<JobEventTracker>();
         services.AddBackgroundJobs<TIn, TOut, TJob>(configureTimeout);
         Provider = services.BuildServiceProvider();
+        Tracker = Provider.GetRequiredService<JobEventTracker>();
 
         _hostedServices = Provider.GetServices<IHostedService>().ToArray();
         foreach (var hostedService in _hostedServices)
@@ -27,6 +29,8 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
     }
 
     public IServiceProvider Provider { get; private set; }
+
+    public JobEventTracker Tracker { get; private set; }
 
     public void Dispose()
     {

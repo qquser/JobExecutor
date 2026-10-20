@@ -56,6 +56,15 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
             request.CallerToken,
             hostStoppingToken);
 
+        // The timeout of the manager may have fired while the job was being resolved: the client was
+        // already rejected, so the job must not start.
+        if (request.StopSource.IsCancellationRequested || request.CallerToken.IsCancellationRequested)
+        {
+            request.Started.TrySetResult(new JobStartedResult(false, "cancelled"));
+            registry.TryRemove(request.JobId, out _);
+            return;
+        }
+
         request.Started.TrySetResult(new JobStartedResult(true, string.Empty));
 
         try
