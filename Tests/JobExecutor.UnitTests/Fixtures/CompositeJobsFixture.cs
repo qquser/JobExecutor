@@ -10,8 +10,8 @@ namespace JobExecutor.UnitTests.Fixtures;
 /// Registers several job types at once, so a job can call another job.
 /// </summary>
 /// <remarks>
-/// The order of the registrations matters: the timeout is a global option, so the timeout of the
-/// last registered job wins for every job.
+/// The order of the registrations matters: the timeouts are global options, so the timeouts of the
+/// last registered job win for every job.
 /// </remarks>
 public sealed class CompositeJobsFixture : IDisposable
 {
@@ -26,9 +26,15 @@ public sealed class CompositeJobsFixture : IDisposable
         services.AddLogging();
         services.AddSingleton<JobEventTracker>();
 
-        services.AddBackgroundJobs<TestTargetJobInput, TestTargetJobResult, TestTargetJob>(configureTargetTimeout);
-        services.AddBackgroundJobs<TestCallerJobInput, TestCallerJobResult, TestCallerJob>(configureTimeout);
-        services.AddBackgroundJobs<TestRecursiveJobInput, TestRecursiveJobResult, TestRecursiveJob>(configureRecursiveTimeout);
+        // The timeouts are global options, so the last registration wins. A registration without its
+        // own configuration keeps the configuration of the previous one.
+        var effectiveTimeout = configureTimeout ?? DefaultTimeout;
+        var effectiveTargetTimeout = configureTargetTimeout ?? effectiveTimeout;
+        var effectiveRecursiveTimeout = configureRecursiveTimeout ?? effectiveTimeout;
+
+        services.AddBackgroundJobs<TestTargetJobInput, TestTargetJobResult, TestTargetJob>(effectiveTargetTimeout);
+        services.AddBackgroundJobs<TestCallerJobInput, TestCallerJobResult, TestCallerJob>(effectiveTimeout);
+        services.AddBackgroundJobs<TestRecursiveJobInput, TestRecursiveJobResult, TestRecursiveJob>(effectiveRecursiveTimeout);
 
         Provider = services.BuildServiceProvider();
         Tracker = Provider.GetRequiredService<JobEventTracker>();
@@ -36,6 +42,16 @@ public sealed class CompositeJobsFixture : IDisposable
         _hostedServices = Provider.GetServices<IHostedService>().ToArray();
         foreach (var hostedService in _hostedServices)
             hostedService.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// The default timeouts of the library: 2 minutes for the start and 30 minutes for the whole
+    /// life of the job.
+    /// </summary>
+    private static void DefaultTimeout(JobTimeoutOptions options)
+    {
+        options.StartTimeout = TimeSpan.FromMinutes(2);
+        options.ExecutionTimeout = TimeSpan.FromMinutes(30);
     }
 
     public IServiceProvider Provider { get; private set; }

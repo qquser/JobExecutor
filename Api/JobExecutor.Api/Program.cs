@@ -29,8 +29,18 @@ builder.Services.AddSwaggerGen(options =>
 
 // Register the background jobs that are exposed through the API.
 // Each job must use its own input and output model types.
-builder.Services.AddBackgroundJobs<SampleJobInput, SampleJobState, SampleJob>();
-builder.Services.AddBackgroundJobs<FailingJobInput, FailingJobState, FailingJob>();
+// The timeouts are mandatory: the wait for the start of the job and the whole life of the job
+// are always set explicitly.
+builder.Services.AddBackgroundJobs<SampleJobInput, SampleJobState, SampleJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<FailingJobInput, FailingJobState, FailingJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
 
 var app = builder.Build();
 

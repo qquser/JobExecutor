@@ -157,7 +157,7 @@ public class NestedJobsTests
     [Fact]
     public async Task RunJobAsync_ShouldCancelNestedJob_WhenParentJobTimesOut()
     {
-        using var fixture = new CompositeJobsFixture(configureTimeout: o => o.Timeout = TimeSpan.FromMilliseconds(200));
+        using var fixture = new CompositeJobsFixture(configureTimeout: o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(200));
         var callerManager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCallerJobInput, TestCallerJobResult>>();
         var targetManager = fixture.Provider.GetRequiredService<IActiveJobManager<TestTargetJobInput, TestTargetJobResult>>();
 
@@ -219,16 +219,16 @@ public class NestedJobsTests
     }
 
     /// <summary>
-    /// Documents the current behaviour: the timeout is a global option, the timeout of the last
-    /// registered job wins for every job.
+    /// Documents the current behaviour: the timeouts are global options, the timeouts of the last
+    /// registered job win for every job.
     /// </summary>
     [Fact]
-    public async Task RunJobAsync_ShouldUseTimeoutOfLastRegisteredJob_WhenJobsHaveDifferentTimeouts()
+    public async Task RunJobAsync_ShouldUseExecutionTimeoutOfLastRegisteredJob_WhenJobsHaveDifferentTimeouts()
     {
         // The target is registered first with a long timeout, the caller is registered last with a short one.
         using var fixture = new CompositeJobsFixture(
-            configureTimeout: o => o.Timeout = TimeSpan.FromMilliseconds(100),
-            configureTargetTimeout: o => o.Timeout = TimeSpan.FromSeconds(5));
+            configureTimeout: o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(100),
+            configureTargetTimeout: o => o.ExecutionTimeout = TimeSpan.FromSeconds(5));
         var callerManager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCallerJobInput, TestCallerJobResult>>();
 
         var stopwatch = Stopwatch.StartNew();
@@ -245,16 +245,16 @@ public class NestedJobsTests
     }
 
     /// <summary>
-    /// Documents the current behaviour: the timeout of an earlier registered job is overridden by the
-    /// timeout of a later registered job.
+    /// Documents the current behaviour: the timeouts of an earlier registered job are overridden by the
+    /// timeouts of a later registered job.
     /// </summary>
     [Fact]
-    public async Task RunJobAsync_ShouldIgnoreOwnTimeoutOfEarlierRegisteredJob_WhenJobsHaveDifferentTimeouts()
+    public async Task RunJobAsync_ShouldIgnoreOwnExecutionTimeoutOfEarlierRegisteredJob_WhenJobsHaveDifferentTimeouts()
     {
         // The target is registered first with a short timeout, the caller is registered last with a long one.
         using var fixture = new CompositeJobsFixture(
-            configureTimeout: o => o.Timeout = TimeSpan.FromSeconds(5),
-            configureTargetTimeout: o => o.Timeout = TimeSpan.FromMilliseconds(50));
+            configureTimeout: o => o.ExecutionTimeout = TimeSpan.FromSeconds(5),
+            configureTargetTimeout: o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(50));
         var targetManager = fixture.Provider.GetRequiredService<IActiveJobManager<TestTargetJobInput, TestTargetJobResult>>();
 
         var stopwatch = Stopwatch.StartNew();

@@ -27,6 +27,7 @@ internal sealed class JobEntryFactory<TIn> : IJobEntryFactory<TIn>
             Input = input,
             StopSource = new CancellationTokenSource(),
             CallerToken = callerToken,
+            Started = new TaskCompletionSource<JobStartedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
             Completed = new TaskCompletionSource<JobCompletedResult>(TaskCreationOptions.RunContinuationsAsynchronously),
         };
     }

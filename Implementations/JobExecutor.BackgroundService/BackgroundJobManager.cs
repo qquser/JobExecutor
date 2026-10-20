@@ -36,12 +36,16 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
 
         try
         {
-            return await request.Started.Task.WaitAsync(timeoutOptions.Value.Timeout, token);
+            // The caller waits only for the acceptance of the request and the start of the job.
+            return await request.Started.Task.WaitAsync(timeoutOptions.Value.StartTimeout, token);
         }
         catch (TimeoutException)
         {
             await request.StopSource.CancelAsync();
-            logger.LogWarning("Job {JobId} did not start within the timeout.", request.JobId.Value);
+            logger.LogWarning(
+                "Job {JobId} did not start within the start timeout of {StartTimeout}.",
+                request.JobId.Value,
+                timeoutOptions.Value.StartTimeout);
             return new JobStartedResult(false, "Timeout.");
         }
     }
@@ -57,14 +61,39 @@ internal sealed class BackgroundJobManager<TIn, TOut>(
         var request = entryFactory.CreateRunRequest(jobId, input, token);
         await runChannel.Writer.WriteAsync(request, token);
 
+        JobStartedResult started;
         try
         {
-            return await request.Completed.Task.WaitAsync(timeoutOptions.Value.Timeout, token);
+            // The first phase: the caller waits for the acceptance of the request and the start of
+            // the execution.
+            started = await request.Started.Task.WaitAsync(timeoutOptions.Value.StartTimeout, token);
         }
         catch (TimeoutException)
         {
             await request.StopSource.CancelAsync();
-            logger.LogWarning("Job {JobId} did not complete within the timeout.", request.JobId.Value);
+            logger.LogWarning(
+                "Job {JobId} did not start within the start timeout of {StartTimeout}.",
+                request.JobId.Value,
+                timeoutOptions.Value.StartTimeout);
+            return new JobCompletedResult(false, "Timeout.");
+        }
+
+        if (!started.Success)
+            return new JobCompletedResult(false, started.Result);
+
+        try
+        {
+            // The second phase: the job has started, so the caller waits for its completion. The
+            // timeout of this phase is counted from the start of the execution.
+            return await request.Completed.Task.WaitAsync(timeoutOptions.Value.ExecutionTimeout, token);
+        }
+        catch (TimeoutException)
+        {
+            await request.StopSource.CancelAsync();
+            logger.LogWarning(
+                "Job {JobId} did not complete within the execution timeout of {ExecutionTimeout}.",
+                request.JobId.Value,
+                timeoutOptions.Value.ExecutionTimeout);
             return new JobCompletedResult(false, "Timeout.");
         }
     }

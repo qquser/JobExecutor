@@ -1,15 +1,18 @@
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
+using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace JobExecutor.BackgroundService.Processing;
 
 internal sealed class StartJobCommandProcessor<TIn, TOut>(
     IServiceScopeFactory scopeFactory,
     IJobRegistry<TIn, TOut> registry,
+    IOptions<JobTimeoutOptions> timeoutOptions,
     ILogger<StartJobCommandProcessor<TIn, TOut>> logger)
     : IStartJobCommandProcessor<TIn, TOut>
         where TIn : class
@@ -49,14 +52,17 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        // The job is cancelled by the stop source (StopJobAsync, the timeout of the manager),
-        // by the token of the caller or by the shutdown of the host.
+        // The job is cancelled by the stop source (StopJobAsync, the timeouts of the manager),
+        // by the token of the caller or by the shutdown of the host. The execution timeout stops
+        // the job when it lives longer than it is allowed to.
+        using var executionTimeout = new CancellationTokenSource(timeoutOptions.Value.ExecutionTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             request.StopSource.Token,
             request.CallerToken,
-            hostStoppingToken);
+            hostStoppingToken,
+            executionTimeout.Token);
 
-        // The timeout of the manager may have fired while the job was being resolved: the client was
+        // The start timeout of the manager may have fired while the job was being resolved: the client was
         // already rejected, so the job must not start.
         if (request.StopSource.IsCancellationRequested || request.CallerToken.IsCancellationRequested)
         {
@@ -65,6 +71,7 @@ internal sealed class StartJobCommandProcessor<TIn, TOut>(
             return;
         }
 
+        // The job begins to execute: the caller stops waiting for the start.
         request.Started.TrySetResult(new JobStartedResult(true, string.Empty));
 
         try

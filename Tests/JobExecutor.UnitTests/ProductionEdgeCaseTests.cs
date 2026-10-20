@@ -13,7 +13,7 @@ public class ProductionEdgeCaseTests
     public async Task StartJobAsync_ShouldReturnFailure_WhenJobCannotBeResolved()
     {
         using var fixture = new BackgroundJobsFixture<TestUnresolvableJobInput, TestUnresolvableJobResult, TestUnresolvableJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(200));
+            o => o.StartTimeout = TimeSpan.FromMilliseconds(200));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestUnresolvableJobInput, TestUnresolvableJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
@@ -27,7 +27,7 @@ public class ProductionEdgeCaseTests
     public async Task RunJobAsync_ShouldReturnFailure_WhenJobCannotBeResolved()
     {
         using var fixture = new BackgroundJobsFixture<TestUnresolvableJobInput, TestUnresolvableJobResult, TestUnresolvableJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(200));
+            o => o.StartTimeout = TimeSpan.FromMilliseconds(200));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestUnresolvableJobInput, TestUnresolvableJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 

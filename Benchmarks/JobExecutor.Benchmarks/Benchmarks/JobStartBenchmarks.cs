@@ -19,7 +19,11 @@ public class JobStartBenchmarks
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddBackgroundJobs<NoOpJobInput, NoOpJobResult, NoOpJob>();
+        services.AddBackgroundJobs<NoOpJobInput, NoOpJobResult, NoOpJob>(options =>
+        {
+            options.StartTimeout = TimeSpan.FromMinutes(2);
+            options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+        });
         _provider = services.BuildServiceProvider();
         _manager = _provider.GetRequiredService<IActiveJobManager<NoOpJobInput, NoOpJobResult>>();
         _input = new NoOpJobInput();

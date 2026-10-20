@@ -12,13 +12,21 @@ namespace JobExecutor.BackgroundService;
 
 public static class ServicesConfiguration
 {
+    /// <summary>
+    /// Registers a background job with its engine, its registry and its manager.
+    /// </summary>
+    /// <param name="services">The service collection of the application.</param>
+    /// <param name="configureTimeout">The timeouts of the job. The parameter is required, so the
+    /// wait for the start of the job and the whole life of the job are always set explicitly.</param>
     public static IServiceCollection AddBackgroundJobs<TIn, TOut, TJob>(
         this IServiceCollection services,
-        Action<JobTimeoutOptions>? configureTimeout = null)
+        Action<JobTimeoutOptions> configureTimeout)
         where TIn : class
         where TOut : class
         where TJob : class, IActiveJob<TIn, TOut>
     {
+        ArgumentNullException.ThrowIfNull(configureTimeout);
+
         if (services.Any(descriptor => descriptor.ImplementationType == typeof(TJob)))
         {
             throw new InvalidOperationException(
@@ -46,8 +54,17 @@ public static class ServicesConfiguration
 
         services.AddOptions();
 
-        if (configureTimeout is not null)
-            services.Configure<JobTimeoutOptions>(configureTimeout);
+        // The timeouts are validated at the registration, so a broken configuration fails fast
+        // and not in the middle of a running job.
+        var timeoutOptions = new JobTimeoutOptions();
+        configureTimeout(timeoutOptions);
+        ValidateTimeoutOptions(timeoutOptions);
+
+        services.Configure<JobTimeoutOptions>(options =>
+        {
+            options.StartTimeout = timeoutOptions.StartTimeout;
+            options.ExecutionTimeout = timeoutOptions.ExecutionTimeout;
+        });
 
         services.AddScoped(typeof(IActiveJob<TIn, TOut>), typeof(TJob));
         services.AddSingleton(_ => Channel.CreateUnbounded<StartJobRequest<TIn>>());
@@ -61,5 +78,26 @@ public static class ServicesConfiguration
         services.AddHostedService<StartJobEngine<TIn, TOut>>();
         services.AddHostedService<RunJobEngine<TIn, TOut>>();
         return services;
+    }
+
+    /// <summary>
+    /// The timeouts must be positive and finite: a caller must not wait for a job forever and a
+    /// job must not live forever.
+    /// </summary>
+    private static void ValidateTimeoutOptions(JobTimeoutOptions options)
+    {
+        if (options.StartTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                $"The start timeout must be a positive, finite time span, but it is {options.StartTimeout}.",
+                nameof(options));
+        }
+
+        if (options.ExecutionTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                $"The execution timeout must be a positive, finite time span, but it is {options.ExecutionTimeout}.",
+                nameof(options));
+        }
     }
 }

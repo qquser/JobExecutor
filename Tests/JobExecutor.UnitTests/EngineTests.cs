@@ -17,7 +17,7 @@ public class EngineTests
     public async Task RunJobEngine_ShouldProcessNextRequest_WhenRunningJobIsCancelled()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
 
         // The first job runs until it is cancelled.
@@ -51,7 +51,7 @@ public class EngineTests
     public async Task StartJobEngine_ShouldProcessNextRequest_WhenRunningJobIsCancelled()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
 
         var first = manager.StartJobAsync(new JobId("first"), new TestCancellableJobInput { BlockUntilCancelled = true });
@@ -79,7 +79,7 @@ public class EngineTests
     public async Task RunJobEngine_ShouldProcessNextRequest_WhenJobThrows()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
 
         var failed = await manager.RunJobAsync(new JobId("failed"), new TestCancellableJobInput { Throw = true });
@@ -98,7 +98,7 @@ public class EngineTests
     public async Task RunJobEngine_ShouldProcessNextRequest_WhenJobThrowsOperationCanceledExceptionOnItsOwn()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
 
         // The job throws OperationCanceledException, but its token was not cancelled.
@@ -122,7 +122,7 @@ public class EngineTests
     public async Task RunJobEngine_ShouldNotProcessRequest_WhenHostIsStopped()
     {
         var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(300));
+            o => o.StartTimeout = TimeSpan.FromMilliseconds(300));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
 
         // The host stops: the engines are stopped and nobody reads the channel anymore.

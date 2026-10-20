@@ -219,7 +219,7 @@ public class JobManagerTests
     public async Task RunJobAsync_ShouldCancelRunningJob_WhenTimedOut()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(50));
+            o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(50));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
@@ -237,7 +237,7 @@ public class JobManagerTests
     public async Task RunJobAsync_ShouldStartJobBeforeTimingOut_WhenExecutionExceedsTimeout()
     {
         using var fixture = new BackgroundJobsFixture<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(100));
+            o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(100));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestForEachJobInput, TestForEachJobResult>>();
         var jobId = new JobId(Guid.NewGuid().ToString());
 
@@ -257,7 +257,7 @@ public class JobManagerTests
     public async Task StartJobAsync_ShouldNotStartJob_WhenTimedOut()
     {
         using var fixture = new BackgroundJobsFixture<TestBlockingJobInput, TestBlockingJobResult, TestBlockingJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(50));
+            o => o.StartTimeout = TimeSpan.FromMilliseconds(50));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult>>();
         var blockerJobId = new JobId(Guid.NewGuid().ToString());
         var timedOutJobId = new JobId(Guid.NewGuid().ToString());

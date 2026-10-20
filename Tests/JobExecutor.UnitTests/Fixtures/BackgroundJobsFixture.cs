@@ -19,13 +19,23 @@ public sealed class BackgroundJobsFixture<TIn, TOut, TJob> : IDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<JobEventTracker>();
-        services.AddBackgroundJobs<TIn, TOut, TJob>(configureTimeout);
+        services.AddBackgroundJobs<TIn, TOut, TJob>(configureTimeout ?? DefaultTimeout);
         Provider = services.BuildServiceProvider();
         Tracker = Provider.GetRequiredService<JobEventTracker>();
 
         _hostedServices = Provider.GetServices<IHostedService>().ToArray();
         foreach (var hostedService in _hostedServices)
             hostedService.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// The default timeouts of the library: 2 minutes for the start and 30 minutes for the whole
+    /// life of the job.
+    /// </summary>
+    private static void DefaultTimeout(JobTimeoutOptions options)
+    {
+        options.StartTimeout = TimeSpan.FromMinutes(2);
+        options.ExecutionTimeout = TimeSpan.FromMinutes(30);
     }
 
     public IServiceProvider Provider { get; private set; }

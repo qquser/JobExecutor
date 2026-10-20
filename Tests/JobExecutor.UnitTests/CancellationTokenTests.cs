@@ -17,7 +17,7 @@ public class CancellationTokenTests
     public async Task RunJobAsync_ShouldThrowOperationCanceledException_WhenTokenIsCancelled()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
         using var cts = new CancellationTokenSource();
 
@@ -34,7 +34,7 @@ public class CancellationTokenTests
     public async Task RunJobAsync_ShouldCancelRunningJob_WhenTokenIsCancelled()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
         using var cts = new CancellationTokenSource();
 
@@ -53,7 +53,7 @@ public class CancellationTokenTests
     public async Task StartJobAsync_ShouldCancelRunningJob_WhenTokenIsCancelled()
     {
         using var fixture = new BackgroundJobsFixture<TestCancellableJobInput, TestCancellableJobResult, TestCancellableJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(10));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(10));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCancellableJobInput, TestCancellableJobResult>>();
         using var cts = new CancellationTokenSource();
 

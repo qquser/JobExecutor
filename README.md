@@ -41,9 +41,13 @@ public sealed class EmailJob : IActiveJob<EmailJobInput, EmailJobState>
 public sealed record EmailJobInput(IReadOnlyList<string> Recipients);
 public sealed record EmailJobState(int Sent);
 
-// 2. Register the job.
+// 2. Register the job. The timeouts are mandatory.
 var services = new ServiceCollection();
-services.AddBackgroundJobs<EmailJobInput, EmailJobState, EmailJob>();
+services.AddBackgroundJobs<EmailJobInput, EmailJobState, EmailJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);     // the wait for the start of the job
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30); // the whole life of the job
+});
 var provider = services.BuildServiceProvider();
 
 // 3. Start/run/stop/query through IActiveJobManager.
@@ -60,7 +64,7 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 |---|---|
 | `IActiveJob<TIn, TOut>` | An active job: `DoAsync(input, token)` + `GetCurrentState()`. Registered **scoped**. |
 | `IActiveJobManager<TIn, TOut>` | Entry point to start, run, stop, and query active jobs. |
-| `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>()` | DI registration (job + hosted engine + registry). Each job must use its **own input and output model types** (`TIn`, `TOut`) — reusing either model for another job fails fast. |
+| `ServicesConfiguration.AddBackgroundJobs<TIn, TOut, TJob>(configureTimeout)` | DI registration (job + hosted engine + registry). Each job must use its **own input and output model types** (`TIn`, `TOut`) — reusing either model for another job fails fast. The timeouts are mandatory: `StartTimeout` is the wait of the caller for the start of the job, `ExecutionTimeout` is the whole life of the job. |
 | Result & state records | `JobStartedResult`, `JobCompletedResult`, `JobStoppedResult`, `ActiveJobsQueryResult<TOut>`, `ActiveJobStateInfo<TOut>`. |
 
 > **You implement `IActiveJob<TIn, TOut>`; the library provides `IActiveJobManager<TIn, TOut>`.**

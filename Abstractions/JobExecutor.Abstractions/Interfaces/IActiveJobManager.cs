@@ -14,8 +14,11 @@ public interface IActiveJobManager<in TIn, TOut>
 {
     /// <summary>
     /// Starts a background job without waiting for it to complete. If IActiveJob.DoAsync throws,
-    /// the job fails, which does not affect job start. The timeout is configured once at registration
-    /// via <c>AddBackgroundJobs</c>.
+    /// the job fails, which does not affect job start. The caller waits for the acceptance of the
+    /// request and the start of the job for <see cref="Models.Options.JobTimeoutOptions.StartTimeout"/>;
+    /// the job itself may live longer, up to
+    /// <see cref="Models.Options.JobTimeoutOptions.ExecutionTimeout"/>. Both timeouts are configured
+    /// at the registration via <c>AddBackgroundJobs</c>.
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
@@ -27,7 +30,11 @@ public interface IActiveJobManager<in TIn, TOut>
 
     /// <summary>
     /// Runs a background job and waits for it to complete. If IActiveJob.DoAsync throws, the error is
-    /// returned in the result. The timeout is configured once at registration via <c>AddBackgroundJobs</c>.
+    /// returned in the result. The call has two phases: the caller waits for the start of the
+    /// execution for <see cref="Models.Options.JobTimeoutOptions.StartTimeout"/>, and then for the
+    /// completion for <see cref="Models.Options.JobTimeoutOptions.ExecutionTimeout"/>, which is
+    /// counted from the start of the execution. Both timeouts are configured at the registration
+    /// via <c>AddBackgroundJobs</c>.
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>

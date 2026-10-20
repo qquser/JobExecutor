@@ -8,7 +8,7 @@ using Xunit;
 namespace JobExecutor.UnitTests;
 
 /// <summary>
-/// The timeout in the middle of the execution: the job has started, but it did not finish in time.
+/// The execution timeout: the job has started, but it did not finish in time.
 /// The client is rejected and the job must be stopped.
 /// </summary>
 public class RunTimeoutTests
@@ -17,7 +17,7 @@ public class RunTimeoutTests
     public async Task RunJobAsync_ShouldCancelRunningJob_WhenTimeoutHappensInTheMiddleOfTheExecution()
     {
         using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(300));
+            o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(300));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
 
         var result = await manager.RunJobAsync(new JobId("job-1"), new TestCountingJobInput());
@@ -35,7 +35,7 @@ public class RunTimeoutTests
     public async Task RunJobAsync_ShouldStopTheWorkOfTheJob_WhenTimeoutHappensInTheMiddleOfTheExecution()
     {
         using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(300));
+            o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(300));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
         var jobId = new JobId("job-1");
 
@@ -57,7 +57,7 @@ public class RunTimeoutTests
     public async Task RunJobAsync_ShouldShowTheProgressOfTheJob_WhileItIsRunning()
     {
         using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(30));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(30));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
         var jobId = new JobId("job-1");
 
@@ -81,7 +81,7 @@ public class RunTimeoutTests
     public async Task RunJobAsync_ShouldCompleteTheJob_WhenItFinishesBeforeTheTimeout()
     {
         using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
-            o => o.Timeout = TimeSpan.FromSeconds(30));
+            o => o.ExecutionTimeout = TimeSpan.FromSeconds(30));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
         var jobId = new JobId("job-1");
 
@@ -103,7 +103,7 @@ public class RunTimeoutTests
     public async Task RunJobAsync_ShouldNotStopTheJob_WhenTheJobIgnoresTheCancellation()
     {
         using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
-            o => o.Timeout = TimeSpan.FromMilliseconds(300));
+            o => o.ExecutionTimeout = TimeSpan.FromMilliseconds(300));
         var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
         var jobId = new JobId("job-1");
 
@@ -116,6 +116,101 @@ public class RunTimeoutTests
         await WaitUntilAsync(() => GetSteps(manager, jobId) >= 2);
         Assert.Equal(1, (await manager.GetAllJobsAsync()).TotalCount);
         Assert.Equal(0, fixture.Tracker.CountOf(TestCountingJob.CancelledEvent));
+    }
+
+    /// <summary>
+    /// The start timeout limits the wait of the caller for the start of the execution only. The job
+    /// may run longer than it, the execution timeout is the limit of the life of the job.
+    /// </summary>
+    [Fact]
+    public async Task RunJobAsync_ShouldCompleteTheJob_WhenTheExecutionIsLongerThanTheStartTimeout()
+    {
+        using var fixture = new BackgroundJobsFixture<TestCountingJobInput, TestCountingJobResult, TestCountingJob>(
+            o =>
+            {
+                o.StartTimeout = TimeSpan.FromMilliseconds(100);
+                o.ExecutionTimeout = TimeSpan.FromSeconds(30);
+            });
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestCountingJobInput, TestCountingJobResult>>();
+
+        // The job works for 500 milliseconds, much longer than the start timeout.
+        var result = await manager.RunJobAsync(new JobId("job-1"), new TestCountingJobInput { Steps = 10, StepDelayMs = 50 });
+
+        Assert.True(result.Success);
+        Assert.Equal(1, fixture.Tracker.CountOf(TestCountingJob.CompletedEvent));
+        Assert.Equal(0, fixture.Tracker.CountOf(TestCountingJob.CancelledEvent));
+    }
+
+    /// <summary>
+    /// The execution timeout is counted from the start of the execution, not from the submission of
+    /// the request. The job waited in the queue longer than the execution timeout and still had the
+    /// whole execution timeout for itself.
+    /// </summary>
+    [Fact]
+    public async Task RunJobAsync_ShouldCountTheExecutionTimeoutFromTheStartOfTheJob_WhenTheJobWaitsInTheQueue()
+    {
+        using var fixture = new BackgroundJobsFixture<TestBlockingJobInput, TestBlockingJobResult, TestBlockingJob>(
+            o =>
+            {
+                o.StartTimeout = TimeSpan.FromSeconds(10);
+                o.ExecutionTimeout = TimeSpan.FromMilliseconds(500);
+            });
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult>>();
+        var blockerJobId = new JobId("blocker");
+        var jobId = new JobId("job-1");
+
+        // The first job blocks the engine, so the second request waits in the queue.
+        var blockerTask = manager.RunJobAsync(blockerJobId, new TestBlockingJobInput());
+        await WaitUntilJobIsRunningAsync(manager, blockerJobId);
+
+        // The second job works for 300 milliseconds and does not block the engine.
+        var runTask = manager.RunJobAsync(jobId, new TestBlockingJobInput(BlockUntilCancelled: false, WorkMs: 300));
+
+        // The engine is released after 400 milliseconds: the second job starts at that moment.
+        await Task.Delay(400);
+        await manager.StopJobAsync(blockerJobId);
+
+        var result = await runTask.WaitAsync(TimeSpan.FromSeconds(10));
+
+        // The whole call took longer than the execution timeout, but the timeout is counted from the
+        // start of the job, so the job had its own 500 milliseconds.
+        Assert.True(result.Success);
+        Assert.Equal("cancelled", (await blockerTask.WaitAsync(TimeSpan.FromSeconds(10))).Result);
+    }
+
+    /// <summary>
+    /// The start timeout of the run: the client stops waiting for the start of the execution and the
+    /// job must not start after the client was rejected.
+    /// </summary>
+    [Fact]
+    public async Task RunJobAsync_ShouldNotStartJob_WhenTheStartTimeoutHappens()
+    {
+        using var fixture = new BackgroundJobsFixture<TestBlockingJobInput, TestBlockingJobResult, TestBlockingJob>(
+            o =>
+            {
+                o.StartTimeout = TimeSpan.FromMilliseconds(100);
+                o.ExecutionTimeout = TimeSpan.FromSeconds(30);
+            });
+        var manager = fixture.Provider.GetRequiredService<IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult>>();
+        var blockerJobId = new JobId("blocker");
+        var timedOutJobId = new JobId("timed-out");
+
+        // Block the engine with a first job so the second request cannot be dequeued.
+        var blockerTask = manager.RunJobAsync(blockerJobId, new TestBlockingJobInput());
+        await WaitUntilJobIsRunningAsync(manager, blockerJobId);
+
+        var result = await manager.RunJobAsync(timedOutJobId, new TestBlockingJobInput());
+
+        // The client is rejected.
+        Assert.False(result.Success);
+        Assert.Equal("Timeout.", result.Result);
+
+        // Unblock the engine. The cancelled request must then be skipped, not started in the background.
+        await manager.StopJobAsync(blockerJobId);
+        await WaitUntilJobsEmptyAsync(manager);
+
+        Assert.False((await manager.GetAllJobsAsync()).Jobs.ContainsKey(timedOutJobId));
+        await blockerTask;
     }
 
     private static int GetSteps(
@@ -142,5 +237,17 @@ public class RunTimeoutTests
         }
 
         Assert.True(condition(), "The expected state was not reached within the timeout.");
+    }
+
+    private static async Task WaitUntilJobIsRunningAsync(
+        IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult> manager, JobId jobId)
+    {
+        await WaitUntilAsync(() => manager.GetAllJobsAsync().GetAwaiter().GetResult().Jobs.ContainsKey(jobId));
+    }
+
+    private static async Task WaitUntilJobsEmptyAsync(
+        IActiveJobManager<TestBlockingJobInput, TestBlockingJobResult> manager)
+    {
+        await WaitUntilAsync(() => manager.GetAllJobsAsync().GetAwaiter().GetResult().TotalCount == 0);
     }
 }
