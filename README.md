@@ -71,6 +71,7 @@ var page    = await manager.GetJobsPageAsync(skip: 0, take: 10);
 ```
 Abstractions/     JobExecutor.Abstractions      — interfaces + result models (no NuGet deps)
 Implementations/  JobExecutor.BackgroundService — the engine, registry, runner
+Api/              JobExecutor.Api               — REST API for testing the library
 Tests/            JobExecutor.UnitTests         — xUnit tests (fakes, in-memory DI)
 Benchmarks/       JobExecutor.Benchmarks        — BenchmarkDotNet console app
 ```
@@ -81,4 +82,8 @@ Benchmarks/       JobExecutor.Benchmarks        — BenchmarkDotNet console app
 dotnet build JobExecutor.sln
 dotnet test  JobExecutor.sln
 dotnet run -c Release --project Benchmarks/JobExecutor.Benchmarks -- --filter "*"
+dotnet run --project Api/JobExecutor.Api
 ```
+
+The API comes up with the Swagger UI at `http://localhost:5288/swagger` — every registered job is
+exposed there as `start` / `run` / `stop` / query endpoints. See `Api/README.md` for the details.

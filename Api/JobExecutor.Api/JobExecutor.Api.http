@@ -1,0 +1,54 @@
+@JobExecutor.Api_HostAddress = http://localhost:5288
+
+### Health check
+GET {{JobExecutor.Api_HostAddress}}/health
+Accept: application/json
+
+### Start the sample job in the background
+POST {{JobExecutor.Api_HostAddress}}/api/sample-jobs/start/job-1
+Content-Type: application/json
+
+{
+  "steps": 10,
+  "stepDelayMs": 1000
+}
+
+### Get the state of all active sample jobs
+GET {{JobExecutor.Api_HostAddress}}/api/sample-jobs
+Accept: application/json
+
+### Get the state of the active sample jobs page by page
+GET {{JobExecutor.Api_HostAddress}}/api/sample-jobs/page?skip=0&take=10
+Accept: application/json
+
+### Get the state of the active sample jobs by their identifiers
+POST {{JobExecutor.Api_HostAddress}}/api/sample-jobs/by-ids
+Content-Type: application/json
+
+{
+  "jobIds": [ "job-1" ]
+}
+
+### Stop the sample job
+POST {{JobExecutor.Api_HostAddress}}/api/sample-jobs/stop/job-1
+Accept: application/json
+
+### Run the sample job and wait for it to complete
+POST {{JobExecutor.Api_HostAddress}}/api/sample-jobs/run/job-2
+Content-Type: application/json
+
+{
+  "steps": 3,
+  "stepDelayMs": 200
+}
+
+### Run the failing job (the error is returned in the response)
+POST {{JobExecutor.Api_HostAddress}}/api/failing-jobs/run/job-3
+Content-Type: application/json
+
+{
+  "message": "Test failure.",
+  "delayMs": 100
+}
+
+###
