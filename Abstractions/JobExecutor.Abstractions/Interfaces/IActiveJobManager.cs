@@ -23,8 +23,9 @@ public interface IActiveJobManager<in TIn, TOut>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>
     /// <param name="token">Cancels the job itself when it is cancelled. The call returns as soon as
-    /// the job is started, so the token only matters before that. Pass the token of the calling job
-    /// to stop the nested jobs together with the caller.</param>
+    /// the job is started, but the token stays connected to the job: cancelling it afterwards stops
+    /// the running job. Pass the token of the calling job to stop the nested jobs together with the
+    /// caller.</param>
     /// <returns>The result of starting the background job.</returns>
     Task<JobStartedResult> StartJobAsync(JobId jobId, TIn input, CancellationToken token = default);
 
@@ -34,7 +35,7 @@ public interface IActiveJobManager<in TIn, TOut>
     /// execution for <see cref="Models.Options.JobTimeoutOptions.StartTimeout"/>, and then for the
     /// completion for <see cref="Models.Options.JobTimeoutOptions.ExecutionTimeout"/>, which is
     /// counted from the start of the execution. Both timeouts are configured at the registration
-    /// via <c>AddBackgroundJobs</c>.
+    /// via <c>AddBackgroundJobs</c>, and every job type keeps its own timeouts.
     /// </summary>
     /// <param name="input">Input parameters for running the job.</param>
     /// <param name="jobId">Job identifier. Must be unique among running jobs.</param>

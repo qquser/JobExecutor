@@ -174,7 +174,7 @@ public class NestedJobsTests
             });
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
 
         await WaitUntilAsync(() => fixture.Tracker.CountOf(TestTargetJob.StartedEvent) == 1);
 
@@ -219,11 +219,11 @@ public class NestedJobsTests
     }
 
     /// <summary>
-    /// Documents the current behaviour: the timeouts are global options, the timeouts of the last
-    /// registered job win for every job.
+    /// Every job type keeps its own timeouts: the registration of one job type never changes the
+    /// timeouts of another one.
     /// </summary>
     [Fact]
-    public async Task RunJobAsync_ShouldUseExecutionTimeoutOfLastRegisteredJob_WhenJobsHaveDifferentTimeouts()
+    public async Task RunJobAsync_ShouldUseTheExecutionTimeoutOfItsOwnJobType_WhenJobsHaveDifferentTimeouts()
     {
         // The target is registered first with a long timeout, the caller is registered last with a short one.
         using var fixture = new CompositeJobsFixture(
@@ -240,16 +240,16 @@ public class NestedJobsTests
 
         // The caller was registered last, so its timeout is applied to the target as well.
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"The timeout of the target was applied, elapsed: {stopwatch.Elapsed}");
     }
 
     /// <summary>
-    /// Documents the current behaviour: the timeouts of an earlier registered job are overridden by the
-    /// timeouts of a later registered job.
+    /// The timeout of a job type belongs to that job type: the target keeps its own short timeout,
+    /// even though the caller was registered with a long one.
     /// </summary>
     [Fact]
-    public async Task RunJobAsync_ShouldIgnoreOwnExecutionTimeoutOfEarlierRegisteredJob_WhenJobsHaveDifferentTimeouts()
+    public async Task RunJobAsync_ShouldUseTheOwnExecutionTimeoutOfTheJobType_WhenJobsHaveDifferentTimeouts()
     {
         // The target is registered first with a short timeout, the caller is registered last with a long one.
         using var fixture = new CompositeJobsFixture(
@@ -264,9 +264,9 @@ public class NestedJobsTests
 
         stopwatch.Stop();
 
-        // The target was configured with 50 milliseconds, but the timeout of the caller won.
-        Assert.True(result.Success);
-        Assert.True(stopwatch.Elapsed > TimeSpan.FromMilliseconds(50), $"The own timeout of the target was applied, elapsed: {stopwatch.Elapsed}");
+        Assert.False(result.Success);
+        Assert.Equal("Execution timeout.", result.Result);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"The timeout of the caller was applied, elapsed: {stopwatch.Elapsed}");
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 3000)

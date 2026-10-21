@@ -10,8 +10,8 @@ namespace JobExecutor.UnitTests.Fixtures;
 /// Registers several job types at once, so a job can call another job.
 /// </summary>
 /// <remarks>
-/// The order of the registrations matters: the timeouts are global options, so the timeouts of the
-/// last registered job win for every job.
+/// Every job type keeps its own timeouts: the registration of one job type never changes the
+/// timeouts of another one.
 /// </remarks>
 public sealed class CompositeJobsFixture : IDisposable
 {
@@ -26,15 +26,9 @@ public sealed class CompositeJobsFixture : IDisposable
         services.AddLogging();
         services.AddSingleton<JobEventTracker>();
 
-        // The timeouts are global options, so the last registration wins. A registration without its
-        // own configuration keeps the configuration of the previous one.
-        var effectiveTimeout = configureTimeout ?? DefaultTimeout;
-        var effectiveTargetTimeout = configureTargetTimeout ?? effectiveTimeout;
-        var effectiveRecursiveTimeout = configureRecursiveTimeout ?? effectiveTimeout;
-
-        services.AddBackgroundJobs<TestTargetJobInput, TestTargetJobResult, TestTargetJob>(effectiveTargetTimeout);
-        services.AddBackgroundJobs<TestCallerJobInput, TestCallerJobResult, TestCallerJob>(effectiveTimeout);
-        services.AddBackgroundJobs<TestRecursiveJobInput, TestRecursiveJobResult, TestRecursiveJob>(effectiveRecursiveTimeout);
+        services.AddBackgroundJobs<TestTargetJobInput, TestTargetJobResult, TestTargetJob>(configureTargetTimeout ?? DefaultTimeout);
+        services.AddBackgroundJobs<TestCallerJobInput, TestCallerJobResult, TestCallerJob>(configureTimeout ?? DefaultTimeout);
+        services.AddBackgroundJobs<TestRecursiveJobInput, TestRecursiveJobResult, TestRecursiveJob>(configureRecursiveTimeout ?? DefaultTimeout);
 
         Provider = services.BuildServiceProvider();
         Tracker = Provider.GetRequiredService<JobEventTracker>();

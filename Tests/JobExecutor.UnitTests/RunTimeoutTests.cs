@@ -24,7 +24,7 @@ public class RunTimeoutTests
 
         // The client is rejected.
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
 
         // The job was cancelled, not left running.
         await WaitUntilAsync(() => fixture.Tracker.CountOf(TestCountingJob.CancelledEvent) == 1);
@@ -110,7 +110,7 @@ public class RunTimeoutTests
         var result = await manager.RunJobAsync(jobId, new TestCountingJobInput { IgnoreCancellation = true });
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
 
         // The job ignores the cancellation and keeps working.
         await WaitUntilAsync(() => GetSteps(manager, jobId) >= 2);
@@ -203,7 +203,7 @@ public class RunTimeoutTests
 
         // The client is rejected.
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Start timeout.", result.Result);
 
         // Unblock the engine. The cancelled request must then be skipped, not started in the background.
         await manager.StopJobAsync(blockerJobId);

@@ -5,7 +5,6 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -27,10 +26,6 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(xmlPath);
 });
 
-// Register the background jobs that are exposed through the API.
-// Each job must use its own input and output model types.
-// The timeouts are mandatory: the wait for the start of the job and the whole life of the job
-// are always set explicitly.
 builder.Services.AddBackgroundJobs<SampleJobInput, SampleJobState, SampleJob>(options =>
 {
     options.StartTimeout = TimeSpan.FromMinutes(2);
@@ -41,10 +36,49 @@ builder.Services.AddBackgroundJobs<FailingJobInput, FailingJobState, FailingJob>
     options.StartTimeout = TimeSpan.FromMinutes(2);
     options.ExecutionTimeout = TimeSpan.FromMinutes(30);
 });
+builder.Services.AddBackgroundJobs<UncooperativeJobInput, UncooperativeJobState, UncooperativeJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<BlockingJobInput, BlockingJobState, BlockingJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<ExplodingJobInput, ExplodingJobState, ExplodingJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<SlowStartJobInput, SlowStartJobState, SlowStartJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<InfiniteJobInput, InfiniteJobState, InfiniteJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<MutatingStateJobInput, MutatingStateJobState, MutatingStateJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddBackgroundJobs<SnapshotJobInput, SnapshotJobState, SnapshotJob>(options =>
+{
+    options.StartTimeout = TimeSpan.FromMinutes(2);
+    options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+});
+
+builder.Services.Configure<SlowStartJobOptions>(options =>
+{
+    options.ResolutionDelay = TimeSpan.FromSeconds(2);
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>

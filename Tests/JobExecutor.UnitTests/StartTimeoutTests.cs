@@ -25,7 +25,7 @@ public class StartTimeoutTests
 
         // The client was rejected.
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Start timeout.", result.Result);
 
         // The job must not start after the client was rejected.
         await Task.Delay(600);

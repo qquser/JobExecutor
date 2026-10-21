@@ -13,6 +13,13 @@ namespace JobExecutor.BackgroundService;
 public static class ServicesConfiguration
 {
     /// <summary>
+    /// The longest timeout the runtime of the framework supports: uint.MaxValue - 1 milliseconds,
+    /// about 49.7 days. Both <c>Task.WaitAsync</c> and <c>CancellationTokenSource</c> reject a
+    /// longer timeout, so it is rejected at the registration.
+    /// </summary>
+    private static readonly TimeSpan MaxTimeout = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+
+    /// <summary>
     /// Registers a background job with its engine, its registry and its manager.
     /// </summary>
     /// <param name="services">The service collection of the application.</param>
@@ -52,17 +59,11 @@ public static class ServicesConfiguration
                 "Each background job must use its own output model type.");
         }
 
-        // The timeouts are validated at the registration, so a broken configuration fails fast
-        // and not in the middle of a running job.
-        var timeoutOptions = new JobTimeoutOptions();
-        configureTimeout(timeoutOptions);
-        ValidateTimeoutOptions(timeoutOptions);
+        var jobTimeouts = new JobTimeoutOptions();
+        configureTimeout(jobTimeouts);
+        ValidateTimeoutOptions(jobTimeouts);
 
-        services.Configure<JobTimeoutOptions>(options =>
-        {
-            options.StartTimeout = timeoutOptions.StartTimeout;
-            options.ExecutionTimeout = timeoutOptions.ExecutionTimeout;
-        });
+        services.AddSingleton<IJobTimeouts<TIn, TOut>>(new JobTimeouts<TIn, TOut>(jobTimeouts));
 
         services.AddScoped(typeof(IActiveJob<TIn, TOut>), typeof(TJob));
         services.AddSingleton(_ => Channel.CreateUnbounded<StartJobRequest<TIn>>());
@@ -80,7 +81,8 @@ public static class ServicesConfiguration
 
     /// <summary>
     /// The timeouts must be positive and finite: a caller must not wait for a job forever and a
-    /// job must not live forever.
+    /// job must not live forever. The execution timeout may be infinite on purpose, for a job
+    /// that lives until it is stopped.
     /// </summary>
     private static void ValidateTimeoutOptions(JobTimeoutOptions options)
     {
@@ -91,11 +93,28 @@ public static class ServicesConfiguration
                 nameof(options));
         }
 
-        if (options.ExecutionTimeout <= TimeSpan.Zero)
+        if (options.StartTimeout > MaxTimeout)
         {
             throw new ArgumentException(
-                $"The execution timeout must be a positive, finite time span, but it is {options.ExecutionTimeout}.",
+                $"The start timeout must not be longer than {MaxTimeout}, but it is {options.StartTimeout}.",
                 nameof(options));
+        }
+
+        if (options.ExecutionTimeout != Timeout.InfiniteTimeSpan)
+        {
+            if (options.ExecutionTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentException(
+                    $"The execution timeout must be a positive time span or Timeout.InfiniteTimeSpan, but it is {options.ExecutionTimeout}.",
+                    nameof(options));
+            }
+
+            if (options.ExecutionTimeout > MaxTimeout)
+            {
+                throw new ArgumentException(
+                    $"The execution timeout must not be longer than {MaxTimeout}, but it is {options.ExecutionTimeout}.",
+                    nameof(options));
+            }
         }
     }
 }

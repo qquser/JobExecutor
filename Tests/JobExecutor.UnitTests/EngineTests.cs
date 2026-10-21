@@ -131,7 +131,7 @@ public class EngineTests
         var result = await manager.RunJobAsync(new JobId("after-stop"), new TestCancellableJobInput());
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Start timeout.", result.Result);
     }
 
     private static async Task WaitUntilJobIsRunningAsync(

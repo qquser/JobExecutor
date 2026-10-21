@@ -1,13 +1,17 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
 using JobExecutor.Abstractions.Models.Queries;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
-// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace JobExecutor.BackgroundService.Registry;
 
+[SuppressMessage(
+    "ReSharper",
+    "ConditionIsAlwaysTrueOrFalseAccordingToNullableApiContract",
+    Justification = "The identifiers come from the caller and can be missing.")]
 internal sealed class JobRegistry<TIn, TOut>(IJobStateMapper<TIn, TOut> stateMapper) : IJobRegistry<TIn, TOut>
     where TIn : class
     where TOut : class
@@ -24,30 +28,54 @@ internal sealed class JobRegistry<TIn, TOut>(IJobStateMapper<TIn, TOut> stateMap
     public bool TryRemove(JobId jobId, out RegisteredJob<TIn, TOut> job) => _jobs.TryRemove(jobId, out job!);
 
     public ActiveJobsQueryResult<TOut> GetAll()
-        => stateMapper.Map(
-            _jobs.ToArray().Select(kv => new KeyValuePair<JobId, IActiveJob<TIn, TOut>>(kv.Key, kv.Value.Job)),
-            _jobs.Count);
+    {
+        var snapshot = _jobs.ToArray();
+
+        return stateMapper.Map(
+            snapshot.Select(kv => new KeyValuePair<JobId, IActiveJob<TIn, TOut>>(kv.Key, kv.Value.Job)),
+            snapshot.Length);
+    }
 
     public ActiveJobsQueryResult<TOut> GetPage(int skip, int take)
-        => stateMapper.Map(
-            _jobs.OrderBy(kv => kv.Key.Value, StringComparer.Ordinal)
+    {
+        if (skip < 0 || take < 0)
+        {
+            var empty = _jobs.ToArray();
+
+            return stateMapper.Map(
+                Array.Empty<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(),
+                empty.Length);
+        }
+
+        var snapshot = _jobs.ToArray();
+
+        return stateMapper.Map(
+            snapshot.OrderBy(kv => kv.Key.Value, StringComparer.Ordinal)
                 .Skip(skip)
                 .Take(take)
                 .Select(kv => new KeyValuePair<JobId, IActiveJob<TIn, TOut>>(kv.Key, kv.Value.Job)),
-            _jobs.Count);
+            snapshot.Length);
+    }
 
     public ActiveJobsQueryResult<TOut> GetByIds(ICollection<JobId> jobIds)
     {
+        var snapshot = _jobs.ToArray();
+
         if (jobIds is null || jobIds.Count == 0)
-            return stateMapper.Map(Array.Empty<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(), _jobs.Count);
+            return stateMapper.Map(Array.Empty<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(), snapshot.Length);
 
         var jobs = new List<KeyValuePair<JobId, IActiveJob<TIn, TOut>>>(jobIds.Count);
+        var seen = new HashSet<JobId>();
+
         foreach (var jobId in jobIds)
         {
+            if (jobId is null || !seen.Add(jobId))
+                continue;
+
             if (_jobs.TryGetValue(jobId, out var job))
                 jobs.Add(new(jobId, job.Job));
         }
 
-        return stateMapper.Map(jobs, _jobs.Count);
+        return stateMapper.Map(jobs, snapshot.Length);
     }
 }

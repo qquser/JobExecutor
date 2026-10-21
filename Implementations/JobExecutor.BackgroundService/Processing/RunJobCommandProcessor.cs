@@ -1,18 +1,16 @@
 using JobExecutor.Abstractions.Interfaces;
 using JobExecutor.Abstractions.Models;
-using JobExecutor.Abstractions.Models.Options;
 using JobExecutor.BackgroundService.Interfaces;
 using JobExecutor.BackgroundService.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace JobExecutor.BackgroundService.Processing;
 
 internal sealed class RunJobCommandProcessor<TIn, TOut>(
     IServiceScopeFactory scopeFactory,
     IJobRegistry<TIn, TOut> registry,
-    IOptions<JobTimeoutOptions> timeoutOptions,
+    IJobTimeouts<TIn, TOut> timeouts,
     ILogger<RunJobCommandProcessor<TIn, TOut>> logger)
     : IRunJobCommandProcessor<TIn, TOut>
         where TIn : class
@@ -52,18 +50,18 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        // The job is cancelled by the stop source (StopJobAsync, the timeouts of the manager),
-        // by the token of the caller or by the shutdown of the host. The execution timeout stops
-        // the job when it lives longer than it is allowed to.
-        using var executionTimeout = new CancellationTokenSource(timeoutOptions.Value.ExecutionTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             request.StopSource.Token,
             request.CallerToken,
-            hostStoppingToken,
-            executionTimeout.Token);
+            hostStoppingToken);
 
-        // The start timeout of the manager may have fired while the job was being resolved: the client was
-        // already rejected, so the job must not start.
+        var executionTimedOut = 0;
+        await using var executionTimeout = new Timer(
+            _ => CancelExecution(linked, request.JobId, () => Interlocked.Exchange(ref executionTimedOut, 1)),
+            null,
+            timeouts.Value.ExecutionTimeout,
+            Timeout.InfiniteTimeSpan);
+
         if (request.StopSource.IsCancellationRequested || request.CallerToken.IsCancellationRequested)
         {
             Fail(request, new JobCompletedResult(false, "cancelled"));
@@ -71,8 +69,6 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             return;
         }
 
-        // The job begins to execute: the caller stops waiting for the start and waits for the
-        // completion instead.
         request.Started.TrySetResult(new JobStartedResult(true, string.Empty));
 
         JobCompletedResult result;
@@ -80,12 +76,12 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
         {
             await job.DoAsync(request.Input, linked.Token);
             result = linked.Token.IsCancellationRequested
-                ? CancelledResult(executionTimeout)
+                ? CancelledResult(Volatile.Read(ref executionTimedOut) == 1)
                 : new JobCompletedResult(true, string.Empty);
         }
         catch (OperationCanceledException) when (linked.Token.IsCancellationRequested)
         {
-            result = CancelledResult(executionTimeout);
+            result = CancelledResult(Volatile.Read(ref executionTimedOut) == 1);
         }
         catch (Exception ex)
         {
@@ -93,18 +89,37 @@ internal sealed class RunJobCommandProcessor<TIn, TOut>(
             result = new JobCompletedResult(false, ex.Message);
         }
 
-        request.Completed.TrySetResult(result);
-
         registry.TryRemove(request.JobId, out _);
+
+        request.Completed.TrySetResult(result);
+    }
+
+    /// <summary>
+    /// The cancellation of the job must not escape: a job that registers a throwing callback on its
+    /// token makes the cancellation fail with an aggregate exception, and the timer of the library
+    /// must not crash the process with it.
+    /// </summary>
+    private void CancelExecution(CancellationTokenSource linked, JobId jobId, Action markTimedOut)
+    {
+        markTimedOut();
+
+        try
+        {
+            linked.Cancel();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "The cancellation of the job {JobId} failed.", jobId.Value);
+        }
     }
 
     /// <summary>
     /// The job was cancelled. The execution timeout is a timeout, the other reasons are a
     /// cancellation.
     /// </summary>
-    private static JobCompletedResult CancelledResult(CancellationTokenSource executionTimeout)
-        => executionTimeout.IsCancellationRequested
-            ? new JobCompletedResult(false, "Timeout.")
+    private static JobCompletedResult CancelledResult(bool executionTimedOut)
+        => executionTimedOut
+            ? new JobCompletedResult(false, "Execution timeout.")
             : new JobCompletedResult(false, "cancelled");
 
     /// <summary>

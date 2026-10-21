@@ -12,12 +12,15 @@ internal sealed class JobStateMapper<TIn, TOut> : IJobStateMapper<TIn, TOut>
     public ActiveJobsQueryResult<TOut> Map(IEnumerable<KeyValuePair<JobId, IActiveJob<TIn, TOut>>> subset,
         int totalCount)
     {
-        var data = subset.ToDictionary(
-            kv => kv.Key,
-            kv => new ActiveJobStateInfo<TOut>
+        var data = new Dictionary<JobId, ActiveJobStateInfo<TOut>>();
+
+        foreach (var pair in subset)
+        {
+            data[pair.Key] = new ActiveJobStateInfo<TOut>
             {
-                Result = kv.Value.GetCurrentState(),
-            });
+                Result = pair.Value.GetCurrentState(),
+            };
+        }
 
         return new ActiveJobsQueryResult<TOut>
         {

@@ -226,7 +226,7 @@ public class JobManagerTests
         var result = await manager.RunJobAsync(jobId, new TestForEachJobInput(int.MaxValue));
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
 
         // The timed-out job must not keep running in the background — it is cancelled and removed.
         await WaitUntilJobRemovedAsync(manager, jobId);
@@ -250,7 +250,7 @@ public class JobManagerTests
         var result = await runTask;
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Execution timeout.", result.Result);
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public class JobManagerTests
         var result = await manager.StartJobAsync(timedOutJobId, new TestBlockingJobInput());
 
         Assert.False(result.Success);
-        Assert.Equal("Timeout.", result.Result);
+        Assert.Equal("Start timeout.", result.Result);
 
         // Unblock the engine. The cancelled request must then be skipped, not started in the background.
         await manager.StopJobAsync(blockerJobId);

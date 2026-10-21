@@ -13,7 +13,11 @@ public interface IActiveJob<in TIn, out TOut>
     Task DoAsync(TIn input, CancellationToken token);
 
     /// <summary>
-    /// Describes the state of the fields of the IActiveJob class that are changed by the DoAsync method.
+    /// Returns the current state of the job. The state is read from another thread while the job
+    /// is working, so it must be one immutable snapshot that is published atomically — for
+    /// example with <c>Volatile.Write</c> and <c>Volatile.Read</c>. A job that returns its fields
+    /// one by one shows the caller a mixture of the steps, because the getter cannot be made
+    /// atomic from the outside.
     /// </summary>
     TOut GetCurrentState();
 }

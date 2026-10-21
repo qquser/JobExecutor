@@ -20,7 +20,8 @@ public class ProductionEdgeCaseTests
         var result = await manager.StartJobAsync(jobId, new TestUnresolvableJobInput());
 
         Assert.False(result.Success);
-        Assert.NotEqual("Timeout.", result.Result);
+        Assert.NotEqual("Start timeout.", result.Result);
+        Assert.NotEqual("Execution timeout.", result.Result);
     }
 
     [Fact]
@@ -34,7 +35,8 @@ public class ProductionEdgeCaseTests
         var result = await manager.RunJobAsync(jobId, new TestUnresolvableJobInput());
 
         Assert.False(result.Success);
-        Assert.NotEqual("Timeout.", result.Result);
+        Assert.NotEqual("Start timeout.", result.Result);
+        Assert.NotEqual("Execution timeout.", result.Result);
     }
 
     [Fact]

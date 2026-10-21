@@ -15,4 +15,8 @@
         <ProjectReference Include="..\..\Abstractions\JobExecutor.Abstractions\JobExecutor.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="JobExecutor.UnitTests" />
+    </ItemGroup>
+
 </Project>

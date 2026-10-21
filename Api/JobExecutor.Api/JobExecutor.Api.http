@@ -51,4 +51,101 @@ Content-Type: application/json
   "delayMs": 100
 }
 
+### Start the uncooperative job (it ignores the cancellation of the library)
+POST {{JobExecutor.Api_HostAddress}}/api/uncooperative-jobs/start/job-4
+Content-Type: application/json
+
+{
+  "steps": 10,
+  "stepDelayMs": 1000
+}
+
+### Start the blocking job (it occupies the engine until it is stopped)
+POST {{JobExecutor.Api_HostAddress}}/api/blocking-jobs/start/job-5
+Content-Type: application/json
+
+{
+  "pollMs": 50
+}
+
+### Run the exploding job (an ordinary exception)
+POST {{JobExecutor.Api_HostAddress}}/api/exploding-jobs/run/job-6
+Content-Type: application/json
+
+{
+  "failure": 0,
+  "message": "Test failure.",
+  "delayMs": 100
+}
+
+### Run the exploding job (it throws OperationCanceledException without a cancelled token)
+POST {{JobExecutor.Api_HostAddress}}/api/exploding-jobs/run/job-7
+Content-Type: application/json
+
+{
+  "failure": 1,
+  "message": "Test cancellation.",
+  "delayMs": 100
+}
+
+### Run the exploding job (the exception has an empty message)
+POST {{JobExecutor.Api_HostAddress}}/api/exploding-jobs/run/job-8
+Content-Type: application/json
+
+{
+  "failure": 2,
+  "delayMs": 100
+}
+
+### Run the exploding job (an aggregate exception)
+POST {{JobExecutor.Api_HostAddress}}/api/exploding-jobs/run/job-9
+Content-Type: application/json
+
+{
+  "failure": 3,
+  "delayMs": 100
+}
+
+### Start the slow job (its creation takes two seconds, the caller waits for the start)
+POST {{JobExecutor.Api_HostAddress}}/api/slow-start-jobs/start/job-10
+Content-Type: application/json
+
+{
+  "steps": 1
+}
+
+### Start the infinite job (only the execution timeout stops it)
+POST {{JobExecutor.Api_HostAddress}}/api/infinite-jobs/start/job-11
+Content-Type: application/json
+
+{
+  "name": "infinite"
+}
+
+### Start the mutating state job (the live state is not a consistent snapshot)
+POST {{JobExecutor.Api_HostAddress}}/api/mutating-state-jobs/start/job-12
+Content-Type: application/json
+
+{
+  "steps": 20,
+  "stepDelayMs": 100
+}
+
+### Read the state of the mutating state job while it is working
+GET {{JobExecutor.Api_HostAddress}}/api/mutating-state-jobs
+Accept: application/json
+
+### Start the snapshot job (it publishes its state as one immutable snapshot)
+POST {{JobExecutor.Api_HostAddress}}/api/snapshot-jobs/start/job-13
+Content-Type: application/json
+
+{
+  "steps": 20,
+  "stepDelayMs": 100
+}
+
+### Read the state of the snapshot job while it is working
+GET {{JobExecutor.Api_HostAddress}}/api/snapshot-jobs
+Accept: application/json
+
 ###
