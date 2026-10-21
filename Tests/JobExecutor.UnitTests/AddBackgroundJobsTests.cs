@@ -82,7 +82,7 @@ public class AddBackgroundJobsTests
     }
 
     /// <summary>
-    /// The timeouts are mandatory at the registration, so the values of the last registration are
+    /// The options are mandatory at the registration, so the values of the last registration are
     /// the ones the manager uses.
     /// </summary>
     [Fact]
@@ -102,6 +102,93 @@ public class AddBackgroundJobsTests
 
         Assert.Equal(TimeSpan.FromSeconds(15), options.StartTimeout);
         Assert.Equal(TimeSpan.FromMinutes(7), options.ExecutionTimeout);
+    }
+
+    /// <summary>
+    /// The client may have configured the options long before the job was registered. The
+    /// registration must not register the options services twice.
+    /// </summary>
+    [Fact]
+    public void AddBackgroundJobs_ShouldNotDuplicateTheOptionsServices_WhenTheClientAlreadyCalledAddOptions()
+    {
+        var services = new ServiceCollection();
+        services.AddOptions();
+
+        var before = services.Count(descriptor => descriptor.ServiceType == typeof(IOptions<>));
+
+        services.AddBackgroundJobs<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(DefaultTimeout);
+
+        var after = services.Count(descriptor => descriptor.ServiceType == typeof(IOptions<>));
+
+        Assert.Equal(before, after);
+
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService<IOptions<JobTimeoutOptions>>().Value);
+    }
+
+    /// <summary>
+    /// Registering several jobs must not register the options services either.
+    /// </summary>
+    [Fact]
+    public void AddBackgroundJobs_ShouldNotDuplicateTheOptionsServices_WhenSeveralJobsAreRegistered()
+    {
+        var services = new ServiceCollection();
+
+        services.AddBackgroundJobs<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(DefaultTimeout);
+        var afterFirst = services.Count(descriptor => descriptor.ServiceType == typeof(IOptions<>));
+
+        services.AddBackgroundJobs<TestOtherJobInput, TestOtherJobResult, TestOtherJob>(DefaultTimeout);
+        var afterSecond = services.Count(descriptor => descriptor.ServiceType == typeof(IOptions<>));
+
+        Assert.Equal(afterFirst, afterSecond);
+    }
+
+    /// <summary>
+    /// The configuration of the client and the configuration of the registration both run, in the
+    /// order they were added. The registration is the last one, so it wins.
+    /// </summary>
+    [Fact]
+    public void AddBackgroundJobs_ShouldWinOverTheConfigurationOfTheClient_WhenTheClientConfiguredTheOptionsFirst()
+    {
+        var services = new ServiceCollection();
+        services.AddOptions();
+        services.Configure<JobTimeoutOptions>(options => options.ExecutionTimeout = TimeSpan.FromMinutes(1));
+
+        services.AddBackgroundJobs<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(options =>
+        {
+            options.StartTimeout = TimeSpan.FromMinutes(2);
+            options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+        });
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<JobTimeoutOptions>>().Value;
+
+        Assert.Equal(TimeSpan.FromMinutes(30), options.ExecutionTimeout);
+    }
+
+    /// <summary>
+    /// The extension point: a configuration added after the registration runs last and overrides
+    /// the value of the registration.
+    /// </summary>
+    [Fact]
+    public void AddBackgroundJobs_ShouldLoseToTheConfigurationOfTheClient_WhenTheClientConfiguredTheOptionsLast()
+    {
+        var services = new ServiceCollection();
+
+        services.AddBackgroundJobs<TestForEachJobInput, TestForEachJobResult, TestForEachJob>(options =>
+        {
+            options.StartTimeout = TimeSpan.FromMinutes(2);
+            options.ExecutionTimeout = TimeSpan.FromMinutes(30);
+        });
+
+        services.Configure<JobTimeoutOptions>(options => options.ExecutionTimeout = TimeSpan.FromMinutes(1));
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<JobTimeoutOptions>>().Value;
+
+        Assert.Equal(TimeSpan.FromMinutes(1), options.ExecutionTimeout);
+        Assert.Equal(TimeSpan.FromMinutes(2), options.StartTimeout);
     }
 
     /// <summary>

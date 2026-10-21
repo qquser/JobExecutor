@@ -52,8 +52,6 @@ public static class ServicesConfiguration
                 "Each background job must use its own output model type.");
         }
 
-        services.AddOptions();
-
         // The timeouts are validated at the registration, so a broken configuration fails fast
         // and not in the middle of a running job.
         var timeoutOptions = new JobTimeoutOptions();
